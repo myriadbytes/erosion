@@ -86,18 +86,6 @@ const simple_pipeline = device.createRenderPipeline({
     },
 });
 function render() {
-    device.queue.writeBuffer(
-        camera.view_matrix_buffer,
-        0,
-        camera.view_matrix as Float32Array
-    );
-
-    device.queue.writeBuffer(
-        camera.proj_matrix_buffer,
-        0,
-        camera.proj_matrix as Float32Array
-    );
-
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
         colorAttachments: [
