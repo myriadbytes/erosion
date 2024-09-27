@@ -1,53 +1,79 @@
 import "./style.css";
-import { InitGridMesh } from "./mesh";
+import { GridMesh } from "./mesh";
+import { InitWebGPU } from "./webgpu";
+import { mat4, vec3 } from "gl-matrix";
 
-import simpleShaderString from "./shaders/simple.wgsl?raw";
+import gridShaderString from "./shaders/grid.wgsl?raw";
+import { OrbitCamera } from "./camera";
 
-async function InitWebGPU(canvas: HTMLCanvasElement) {
-    if (!navigator.gpu) {
-        throw new Error("WebGPU not supported on this browser.");
-    }
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-        throw new Error("No appropriate GPUAdapter found.");
-    }
+const { device, context, canvasFormat } = await InitWebGPU();
 
-    const device = await adapter.requestDevice();
+const grid_mesh = new GridMesh(device, 3);
 
-    const context = canvas.getContext("webgpu")!;
-    const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
-    context.configure({
-        device: device,
-        format: canvasFormat,
-    });
+const camera = new OrbitCamera(device);
 
-    return { device, context, canvasFormat };
-}
-
-let canvas = document.querySelector("canvas")!;
-
-const { device, context, canvasFormat } = await InitWebGPU(canvas);
-
-const { vertex_buffer, index_buffer, vertex_buffer_layout } = InitGridMesh(
-    device,
-    10
-);
-
-const simpleShaderModule = device.createShaderModule({
-    label: "Simple Shader",
-    code: simpleShaderString,
+const gridShaderModule = device.createShaderModule({
+    label: "Grid Shader",
+    code: gridShaderString,
 });
 
-const simplePipeline = device.createRenderPipeline({
+const grid_bind_group_layout = device.createBindGroupLayout({
+    label: "Grid Bind Group Layout",
+    entries: [
+        {
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: {
+                type: "uniform",
+                hasDynamicOffset: false,
+                minBindingSize: undefined,
+            },
+        },
+        {
+            binding: 1,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: {
+                type: "uniform",
+                hasDynamicOffset: false,
+                minBindingSize: undefined,
+            },
+        },
+    ],
+});
+
+const grid_bind_group = device.createBindGroup({
+    label: "Grid Bind Group",
+    layout: grid_bind_group_layout,
+    entries: [
+        {
+            binding: 0,
+            resource: {
+                buffer: camera.view_matrix_buffer,
+            },
+        },
+        {
+            binding: 1,
+            resource: {
+                buffer: camera.proj_matrix_buffer,
+            },
+        },
+    ],
+});
+
+const simple_pipeline_layout = device.createPipelineLayout({
+    bindGroupLayouts: [grid_bind_group_layout],
+});
+
+const simple_pipeline = device.createRenderPipeline({
     label: "Simple Pipeline",
-    layout: "auto",
+    layout: simple_pipeline_layout,
     vertex: {
-        module: simpleShaderModule,
+        module: gridShaderModule,
         entryPoint: "vertexMain",
-        buffers: [vertex_buffer_layout],
+        buffers: [grid_mesh.vertex_buffer_layout],
     },
     fragment: {
-        module: simpleShaderModule,
+        module: gridShaderModule,
         entryPoint: "fragmentMain",
         targets: [
             {
@@ -59,25 +85,43 @@ const simplePipeline = device.createRenderPipeline({
         frontFace: "ccw",
     },
 });
+function render() {
+    device.queue.writeBuffer(
+        camera.view_matrix_buffer,
+        0,
+        camera.view_matrix as Float32Array
+    );
 
-const encoder = device.createCommandEncoder();
-const pass = encoder.beginRenderPass({
-    colorAttachments: [
-        {
-            view: context.getCurrentTexture().createView(),
-            loadOp: "clear",
-            storeOp: "store",
-            clearValue: [0.9, 0.2, 0.3, 1.0],
-        },
-    ],
-});
+    device.queue.writeBuffer(
+        camera.proj_matrix_buffer,
+        0,
+        camera.proj_matrix as Float32Array
+    );
 
-pass.setPipeline(simplePipeline);
-pass.setVertexBuffer(0, vertex_buffer);
-pass.setIndexBuffer(index_buffer, "uint32");
-pass.drawIndexed(6);
-pass.end();
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({
+        colorAttachments: [
+            {
+                view: context.getCurrentTexture().createView(),
+                loadOp: "clear",
+                storeOp: "store",
+                clearValue: [0.0, 0.0, 0.1, 1.0],
+            },
+        ],
+    });
 
-const commandBuffer = encoder.finish();
+    pass.setPipeline(simple_pipeline);
+    pass.setVertexBuffer(0, grid_mesh.vertex_buffer);
+    pass.setIndexBuffer(grid_mesh.index_buffer, "uint32");
+    pass.setBindGroup(0, grid_bind_group);
+    pass.drawIndexed(grid_mesh.nb_to_draw);
+    pass.end();
 
-device.queue.submit([commandBuffer]);
+    const commandBuffer = encoder.finish();
+
+    device.queue.submit([commandBuffer]);
+
+    requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
