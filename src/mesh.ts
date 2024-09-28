@@ -59,11 +59,11 @@ function GenerateGridMesh(resolution: number) {
             vertices[vertex_idx++] = x / (resolution - 1);
             vertices[vertex_idx++] = 1.0 - y / (resolution - 1);
 
-            console.log(
+            /* console.log(
                 `Vertex (${x}, ${y}) ${y * resolution + x} : pos(${
                     vertices[vertex_idx - 5]
                 }, ${vertices[vertex_idx - 4]})`
-            );
+            ); */
         }
     }
 
@@ -85,7 +85,7 @@ function GenerateGridMesh(resolution: number) {
             indices[index_idx++] = bottom_left;
             indices[index_idx++] = bottom_right;
 
-            console.log(`Quad (${x}, ${y}) :`);
+            /* console.log(`Quad (${x}, ${y}) :`);
             console.log(
                 `   Triangle 1 : {${indices[index_idx - 6]}, ${
                     indices[index_idx - 5]
@@ -95,7 +95,7 @@ function GenerateGridMesh(resolution: number) {
                 `   Triangle 2 : {${indices[index_idx - 3]}, ${
                     indices[index_idx - 2]
                 }, ${indices[index_idx - 1]}}`
-            );
+            ); */
         }
     }
 
