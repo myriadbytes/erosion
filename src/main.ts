@@ -5,12 +5,46 @@ import { mat4, vec3 } from "gl-matrix";
 
 import gridShaderString from "./shaders/grid.wgsl?raw";
 import { OrbitCamera } from "./camera";
+import { Perlin } from "./noise";
+import { ErosionCompute } from "./compute";
 
-const { device, context, canvasFormat } = await InitWebGPU();
+const { device, context, canvasFormat, depthTexture } = await InitWebGPU();
 
-const grid_mesh = new GridMesh(device, 3);
-
+const grid_mesh = new GridMesh(device, 100);
 const camera = new OrbitCamera(device);
+
+const HEIGHTMAP_WIDTH = 32;
+const heightmap = new Float32Array(HEIGHTMAP_WIDTH * HEIGHTMAP_WIDTH).map(
+    (e, i, a) => {
+        const noise = new Perlin();
+        let x = i / HEIGHTMAP_WIDTH;
+        let y = i % HEIGHTMAP_WIDTH;
+        return noise.perlin(
+            (x / HEIGHTMAP_WIDTH) * 4,
+            (y / HEIGHTMAP_WIDTH) * 4
+        );
+    }
+);
+
+const heightmap_texture = device.createTexture({
+    label: "heightmap texture",
+    size: [HEIGHTMAP_WIDTH, HEIGHTMAP_WIDTH],
+    format: "r32float",
+    usage:
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST,
+});
+device.queue.writeTexture(
+    { texture: heightmap_texture },
+    heightmap,
+    { bytesPerRow: HEIGHTMAP_WIDTH * 4 },
+    { width: HEIGHTMAP_WIDTH, height: HEIGHTMAP_WIDTH }
+);
+
+const heightmap_sampler = device.createSampler({ magFilter: "linear" });
+
+//const compute = new ErosionCompute(device, heightmap_texture);
 
 const gridShaderModule = device.createShaderModule({
     label: "Grid Shader",
@@ -21,7 +55,7 @@ const grid_bind_group_layout = device.createBindGroupLayout({
     label: "Grid Bind Group Layout",
     entries: [
         {
-            binding: 0,
+            binding: 0, // view
             visibility: GPUShaderStage.VERTEX,
             buffer: {
                 type: "uniform",
@@ -30,13 +64,23 @@ const grid_bind_group_layout = device.createBindGroupLayout({
             },
         },
         {
-            binding: 1,
+            binding: 1, // proj
             visibility: GPUShaderStage.VERTEX,
             buffer: {
                 type: "uniform",
                 hasDynamicOffset: false,
                 minBindingSize: undefined,
             },
+        },
+        {
+            binding: 2, // heightmap sampler
+            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            sampler: {},
+        },
+        {
+            binding: 3, // heightmap f32 texture
+            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            texture: {},
         },
     ],
 });
@@ -56,6 +100,14 @@ const grid_bind_group = device.createBindGroup({
             resource: {
                 buffer: camera.proj_matrix_buffer,
             },
+        },
+        {
+            binding: 2,
+            resource: heightmap_sampler,
+        },
+        {
+            binding: 3,
+            resource: heightmap_texture.createView(),
         },
     ],
 });
@@ -83,8 +135,15 @@ const simple_pipeline = device.createRenderPipeline({
     },
     primitive: {
         frontFace: "ccw",
+        cullMode: "back",
+    },
+    depthStencil: {
+        depthWriteEnabled: true,
+        depthCompare: "less",
+        format: "depth24plus",
     },
 });
+
 function render() {
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
@@ -96,6 +155,12 @@ function render() {
                 clearValue: [0.0, 0.0, 0.1, 1.0],
             },
         ],
+        depthStencilAttachment: {
+            view: depthTexture.createView(),
+            depthClearValue: 1.0,
+            depthLoadOp: "clear",
+            depthStoreOp: "store",
+        },
     });
 
     pass.setPipeline(simple_pipeline);

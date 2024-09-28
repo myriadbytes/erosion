@@ -9,7 +9,14 @@ export async function InitWebGPU() {
         throw new Error("No appropriate GPUAdapter found.");
     }
 
-    const device = await adapter.requestDevice();
+    const device = await adapter.requestDevice({
+        requiredFeatures: ["float32-filterable"],
+    });
+    if (!device) {
+        throw new Error(
+            "Your WebGPU device doesn't support filterable float32 textures !"
+        );
+    }
 
     const context = canvas.getContext("webgpu")!;
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -18,5 +25,11 @@ export async function InitWebGPU() {
         format: canvasFormat,
     });
 
-    return { device, context, canvasFormat };
+    const depthTexture = device.createTexture({
+        size: [canvas.width, canvas.height],
+        format: "depth24plus",
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+
+    return { device, context, canvasFormat, depthTexture };
 }
