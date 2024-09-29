@@ -13,7 +13,7 @@ const { device, context, canvasFormat, depthTexture } = await InitWebGPU();
 const grid_mesh = new GridMesh(device, 100);
 const camera = new OrbitCamera(device);
 
-const HEIGHTMAP_WIDTH = 32;
+const HEIGHTMAP_WIDTH = 512;
 const heightmap = new Float32Array(HEIGHTMAP_WIDTH * HEIGHTMAP_WIDTH).map(
     (e, i, a) => {
         const noise = new Perlin();
@@ -27,7 +27,7 @@ const heightmap = new Float32Array(HEIGHTMAP_WIDTH * HEIGHTMAP_WIDTH).map(
 );
 
 const heightmap_texture = device.createTexture({
-    label: "heightmap texture",
+    label: "Heightmap buffer",
     size: [HEIGHTMAP_WIDTH, HEIGHTMAP_WIDTH],
     format: "r32float",
     usage:
@@ -35,14 +35,13 @@ const heightmap_texture = device.createTexture({
         GPUTextureUsage.TEXTURE_BINDING |
         GPUTextureUsage.COPY_DST,
 });
+
 device.queue.writeTexture(
     { texture: heightmap_texture },
     heightmap,
     { bytesPerRow: HEIGHTMAP_WIDTH * 4 },
     { width: HEIGHTMAP_WIDTH, height: HEIGHTMAP_WIDTH }
 );
-
-const heightmap_sampler = device.createSampler({ magFilter: "linear" });
 
 //const compute = new ErosionCompute(device, heightmap_texture);
 
@@ -73,13 +72,8 @@ const grid_bind_group_layout = device.createBindGroupLayout({
             },
         },
         {
-            binding: 2, // heightmap sampler
-            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-            sampler: {},
-        },
-        {
-            binding: 3, // heightmap f32 texture
-            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            binding: 2, // heightmap f32 texture
+            visibility: GPUShaderStage.VERTEX,
             texture: {},
         },
     ],
@@ -103,10 +97,6 @@ const grid_bind_group = device.createBindGroup({
         },
         {
             binding: 2,
-            resource: heightmap_sampler,
-        },
-        {
-            binding: 3,
             resource: heightmap_texture.createView(),
         },
     ],
