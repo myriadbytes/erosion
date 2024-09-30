@@ -18,13 +18,7 @@ var <uniform> proj: mat4x4<f32>;
 var viz_sampler: sampler;
 
 @group(1) @binding(0)
-var t1: texture_2d<f32>;
-
-@group(1) @binding(1)
-var t2: texture_2d<f32>;
-
-@group(1) @binding(3)
-var t3: texture_2d<f32>;
+var b: texture_2d<f32>;
 
 @vertex
 fn vertexMain(in: Vertex) -> VertexOut {
@@ -39,7 +33,8 @@ fn vertexMain(in: Vertex) -> VertexOut {
 @fragment
 fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
     //return vec4f(in.uv, 0.0, 1.0);
+    return textureSample(b, viz_sampler, in.uv);
     //return vec4f(1.0, 1.0, 1.0, 1.0);
 
-    return textureSample(t1, viz_sampler, in.uv);
+    //return textureSample(t1, viz_sampler, in.uv);
 } 
