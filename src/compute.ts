@@ -135,7 +135,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.bind_group);
-        pass.dispatchWorkgroups(512 / 32, 512 / 32);
+        pass.dispatchWorkgroups(512 / 16, 512 / 16);
         pass.end();
 
         const command_buffer = encoder.finish();

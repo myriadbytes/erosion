@@ -19,7 +19,7 @@ const grid_mesh = new GridMesh(
 );
 
 const compute = new ErosionCompute(device);
-document.getElementById("compute-button")!.addEventListener("click", () => {
+document.getElementById("compute-button")!.addEventListener("mousedown", () => {
     compute.run_pass();
 });
 

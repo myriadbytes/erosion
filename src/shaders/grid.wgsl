@@ -33,7 +33,8 @@ fn vertexMain(in: Vertex) -> VertexOut {
 @fragment
 fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
     //return vec4f(in.uv, 0.0, 1.0);
-    return textureSample(b, viz_sampler, in.uv);
+    let height = textureSample(b, viz_sampler, in.uv).r;
+    return vec4f(height, height, height, 1.0);
     //return vec4f(1.0, 1.0, 1.0, 1.0);
 
     //return textureSample(t1, viz_sampler, in.uv);
