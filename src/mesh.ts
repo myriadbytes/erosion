@@ -1,9 +1,23 @@
+import grid_shader_string from "./shaders/grid.wgsl?raw";
+
 export class GridMesh {
+    // vertex data
     vertex_buffer: GPUBuffer;
     index_buffer: GPUBuffer;
     vertex_buffer_layout: GPUVertexBufferLayout;
     nb_to_draw: number;
-    constructor(device: GPUDevice, resolution: number) {
+    // rendering data
+    shader_module: GPUShaderModule;
+    bind_group_layout: GPUBindGroupLayout;
+    bind_group: GPUBindGroup;
+    sampler: GPUSampler;
+    constructor(
+        device: GPUDevice,
+        resolution: number,
+        view_matrix_buffer: GPUBuffer,
+        proj_matrix_buffer: GPUBuffer
+    ) {
+        // vertex data
         let { vertices, indices } = GenerateGridMesh(resolution);
 
         const vertex_buffer = device.createBuffer({
@@ -44,6 +58,63 @@ export class GridMesh {
         this.index_buffer = index_buffer;
         this.vertex_buffer_layout = vertex_buffer_layout;
         this.nb_to_draw = (resolution - 1) * (resolution - 1) * 6;
+
+        // rendering data
+        this.shader_module = device.createShaderModule({
+            label: "Grid Mesh Shader",
+            code: grid_shader_string,
+        });
+
+        this.sampler = device.createSampler({});
+
+        this.bind_group_layout = device.createBindGroupLayout({
+            label: "Grid Mesh Bindgroup Layout",
+            entries: [
+                {
+                    binding: 0, // view matrix
+                    visibility: GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: "uniform",
+                        hasDynamicOffset: false,
+                        minBindingSize: undefined,
+                    },
+                },
+                {
+                    binding: 1, // proj matrix
+                    visibility: GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: "uniform",
+                        hasDynamicOffset: false,
+                        minBindingSize: undefined,
+                    },
+                },
+                {
+                    binding: 2, // sampler for texture visualization
+                    visibility: GPUShaderStage.FRAGMENT,
+                    sampler: {},
+                },
+            ],
+        });
+
+        this.bind_group = device.createBindGroup({
+            label: "Grid Bind Group",
+            layout: this.bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: view_matrix_buffer,
+                    },
+                },
+                {
+                    binding: 1,
+                    resource: {
+                        buffer: proj_matrix_buffer,
+                    },
+                },
+                { binding: 2, resource: this.sampler },
+            ],
+        });
     }
 }
 
