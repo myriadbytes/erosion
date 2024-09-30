@@ -8,15 +8,17 @@ export class ErosionCompute {
     bind_group: GPUBindGroup;
     view_bind_group_layout: GPUBindGroupLayout;
     view_bind_group: GPUBindGroup;
-    b: GPUTexture;
+    terrain_height_texture: GPUTexture;
+    water_height_texture: GPUTexture;
     compute_shader: GPUShaderModule;
     pipeline_layout: GPUPipelineLayout;
     pipeline: GPUComputePipeline;
 
     constructor(device: GPUDevice) {
         this.device = device;
-        // b (terrain height)
-        this.b = device.createTexture({
+
+        // terrain height (b)
+        this.terrain_height_texture = device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "r32float",
             usage:
@@ -36,11 +38,20 @@ export class ErosionCompute {
             );
         });
         device.queue.writeTexture(
-            { texture: this.b },
+            { texture: this.terrain_height_texture },
             heightmap_seed,
             { bytesPerRow: 4 * this.TEXTURES_W },
             { width: this.TEXTURES_W, height: this.TEXTURES_W }
         );
+
+        // water height (d)
+        this.water_height_texture = device.createTexture({
+            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            format: "r32float",
+            usage:
+                GPUTextureUsage.STORAGE_BINDING |
+                GPUTextureUsage.TEXTURE_BINDING,
+        });
 
         /* // outflow flux in 4 directions
         this.t2 = device.createTexture({
@@ -65,11 +76,19 @@ export class ErosionCompute {
         this.bind_group_layout = device.createBindGroupLayout({
             label: "Compute Bindgroup Layout",
             entries: [
-                // bds
+                // terrain height
                 {
                     binding: 0,
-                    visibility:
-                        GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT,
+                    visibility: GPUShaderStage.COMPUTE,
+                    storageTexture: {
+                        access: "read-write",
+                        format: "r32float",
+                    },
+                },
+                // water height
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.COMPUTE,
                     storageTexture: {
                         access: "read-write",
                         format: "r32float",
@@ -84,7 +103,11 @@ export class ErosionCompute {
             entries: [
                 {
                     binding: 0,
-                    resource: this.b.createView(),
+                    resource: this.terrain_height_texture.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.water_height_texture.createView(),
                 },
             ],
         });
@@ -92,10 +115,16 @@ export class ErosionCompute {
         this.view_bind_group_layout = device.createBindGroupLayout({
             label: "Compute Textures View Bindgroup Layout",
             entries: [
-                // bds
+                // terrain height
                 {
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+                // water height
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
                     texture: {},
                 },
             ],
@@ -107,7 +136,11 @@ export class ErosionCompute {
             entries: [
                 {
                     binding: 0,
-                    resource: this.b.createView(),
+                    resource: this.terrain_height_texture.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.water_height_texture.createView(),
                 },
             ],
         });
