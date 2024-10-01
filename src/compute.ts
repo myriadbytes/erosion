@@ -1,26 +1,32 @@
 import { Perlin } from "./noise";
-import compute_shader_string from "./shaders/compute.wgsl?raw";
+import water_increment_shader_string from "./shaders/water_increment.wgsl?raw";
+import outflow_flux_shader_string from "./shaders/outflow_flux.wgsl?raw";
 
 export class ErosionCompute {
     device: GPUDevice;
     // textures
     TEXTURES_W = 512;
-    t1_in: GPUTexture;
-    t1_out: GPUTexture;
-    t2_in: GPUTexture;
-    t2_out: GPUTexture;
-    t3_in: GPUTexture;
-    t3_out: GPUTexture;
+    t1_read: GPUTexture;
+    t1_write: GPUTexture;
+    t2_read: GPUTexture;
+    t2_write: GPUTexture;
+    t3_read: GPUTexture;
+    t3_write: GPUTexture;
     // shaders
     water_increment_shader: GPUShaderModule;
+    outflow_flux_shader: GPUShaderModule;
 
     // bind group stuff
     water_increment_bind_group_layout: GPUBindGroupLayout;
     water_increment_bind_group: GPUBindGroup;
+    outflow_flux_bind_group_layout: GPUBindGroupLayout;
+    outflow_flux_bind_group: GPUBindGroup;
 
     // pipelines
     water_increment_pipeline_layout: GPUPipelineLayout;
     water_increment_pipeline: GPUComputePipeline;
+    outflow_flux_pipeline_layout: GPUPipelineLayout;
+    outflow_flux_pipeline: GPUComputePipeline;
 
     constructor(device: GPUDevice) {
         this.device = device;
@@ -50,7 +56,7 @@ export class ErosionCompute {
          *  T3 HOLDS : ->V (velocity field)
          */
 
-        this.t1_in = this.device.createTexture({
+        this.t1_read = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rgba32float",
             usage:
@@ -58,35 +64,35 @@ export class ErosionCompute {
                 GPUTextureUsage.TEXTURE_BINDING |
                 GPUTextureUsage.COPY_DST,
         });
-        this.t1_out = this.device.createTexture({
+        this.t1_write = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
                 GPUTextureUsage.TEXTURE_BINDING,
         });
-        this.t2_in = this.device.createTexture({
+        this.t2_read = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
                 GPUTextureUsage.TEXTURE_BINDING,
         });
-        this.t2_out = this.device.createTexture({
+        this.t2_write = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
                 GPUTextureUsage.TEXTURE_BINDING,
         });
-        this.t3_in = this.device.createTexture({
+        this.t3_read = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rg32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
                 GPUTextureUsage.TEXTURE_BINDING,
         });
-        this.t3_out = this.device.createTexture({
+        this.t3_write = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rg32float",
             usage:
@@ -111,7 +117,7 @@ export class ErosionCompute {
                     },
                     // bds output
                     {
-                        binding: 3,
+                        binding: 1,
                         visibility: GPUShaderStage.COMPUTE,
                         storageTexture: {
                             access: "write-only",
@@ -127,18 +133,18 @@ export class ErosionCompute {
             entries: [
                 {
                     binding: 0,
-                    resource: this.t1_in.createView(),
+                    resource: this.t1_read.createView(),
                 },
                 {
                     binding: 1,
-                    resource: this.t1_out.createView(),
+                    resource: this.t1_write.createView(),
                 },
             ],
         });
 
         this.water_increment_shader = this.device.createShaderModule({
             label: "Water Increment Shader",
-            code: compute_shader_string,
+            code: water_increment_shader_string,
         });
 
         this.water_increment_pipeline_layout = this.device.createPipelineLayout(
@@ -153,6 +159,79 @@ export class ErosionCompute {
                 module: this.water_increment_shader,
             },
             layout: this.water_increment_pipeline_layout,
+        });
+    }
+
+    init_outflow_flux() {
+        this.outflow_flux_bind_group_layout = this.device.createBindGroupLayout(
+            {
+                label: "Outflow Flux Bindgroup Layout",
+                entries: [
+                    // b, d in
+                    {
+                        binding: 0,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // f in
+                    {
+                        binding: 1,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // f out
+                    {
+                        binding: 2,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "write-only",
+                            format: "rgba32float",
+                        },
+                    },
+                ],
+            }
+        );
+
+        this.outflow_flux_bind_group = this.device.createBindGroup({
+            label: "Outflow Flux Bind Group",
+            layout: this.outflow_flux_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t2_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t2_write.createView(),
+                },
+            ],
+        });
+
+        this.outflow_flux_shader = this.device.createShaderModule({
+            label: "Outflow Flux Shader",
+            code: outflow_flux_shader_string,
+        });
+
+        this.outflow_flux_pipeline_layout = this.device.createPipelineLayout({
+            bindGroupLayouts: [this.outflow_flux_bind_group_layout],
+        });
+
+        this.outflow_flux_pipeline = this.device.createComputePipeline({
+            label: "Outflow Flux Compute Pipeline",
+            compute: {
+                module: this.outflow_flux_shader,
+            },
+            layout: this.outflow_flux_pipeline_layout,
         });
     }
 
