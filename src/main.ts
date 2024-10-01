@@ -19,9 +19,11 @@ const grid_mesh = new GridMesh(
 );
 
 const compute = new ErosionCompute(device);
-/* document.getElementById("compute-button")!.addEventListener("mousedown", () => {
-    compute.run_pass();
-}); */
+document
+    .getElementById("water_increment_button")!
+    .addEventListener("mousedown", () => {
+        compute.run_water_increment();
+    });
 
 const render_pipeline_layout = device.createPipelineLayout({
     bindGroupLayouts: [

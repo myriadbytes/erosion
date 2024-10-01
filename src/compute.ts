@@ -108,7 +108,8 @@ export class ErosionCompute {
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING,
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_SRC,
         });
         this.t2_read = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
@@ -584,6 +585,22 @@ export class ErosionCompute {
             },
             layout: this.evaporation_pipeline_layout,
         });
+    }
+
+    run_water_increment() {
+        const encoder = this.device.createCommandEncoder({});
+        const pass = encoder.beginComputePass();
+        pass.setPipeline(this.water_increment_pipeline);
+        pass.setBindGroup(0, this.water_increment_bind_group);
+        pass.dispatchWorkgroups(512 / 16, 512 / 16);
+        pass.end();
+        encoder.copyTextureToTexture(
+            { texture: this.t1_write },
+            { texture: this.t1_read },
+            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+        );
+        const command_buffer = encoder.finish();
+        this.device.queue.submit([command_buffer]);
     }
 
     /*    run_pass() {
