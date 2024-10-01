@@ -4,7 +4,7 @@ import outflow_flux_shader_string from "./shaders/outflow_flux.wgsl?raw";
 import water_velocity_shader_string from "./shaders/water_velocity.wgsl?raw";
 import erosion_deposition_shader_string from "./shaders/erosion_deposition.wgsl?raw";
 import transportation_shader_string from "./shaders/transportation.wgsl?raw";
-import evaporation_shader_string from "./shaders/evaportation.wgsl?raw";
+import evaporation_shader_string from "./shaders/evaporation.wgsl?raw";
 
 export class ErosionCompute {
     device: GPUDevice;
@@ -52,32 +52,40 @@ export class ErosionCompute {
     evaporation_pipeline_layout: GPUPipelineLayout;
     evaporation_pipeline: GPUComputePipeline;
 
+    // for visualization
+    view_bind_group_layout: GPUBindGroupLayout;
+    view_bind_group: GPUBindGroup;
+
     constructor(device: GPUDevice) {
         this.device = device;
-        /* const noise = new Perlin();
-        const heightmap_seed = new Float32Array(
-            this.TEXTURES_W * this.TEXTURES_W
-        ).map((e, i, a) => {
-            let x = i / this.TEXTURES_W;
-            let y = i % this.TEXTURES_W;
-            return noise.perlin(
-                (x / this.TEXTURES_W) * 4,
-                (y / this.TEXTURES_W) * 4
-            );
-        });
-        device.queue.writeTexture(
-            { texture: this.t1_in },
-            heightmap_seed,
-            { bytesPerRow: 4 * this.TEXTURES_W },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
-        ); */
-
         this.init_textures();
         this.init_water_increment();
         this.init_outflow_flux();
         this.init_water_velocity();
         this.init_erosion_deposition();
         this.init_transportation();
+
+        this.view_bind_group_layout = device.createBindGroupLayout({
+            label: "visualization bind group layout",
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+            ],
+        });
+
+        this.view_bind_group = device.createBindGroup({
+            label: "visualization bind group",
+            layout: this.view_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+            ],
+        });
     }
 
     init_textures() {
@@ -130,6 +138,30 @@ export class ErosionCompute {
                 GPUTextureUsage.STORAGE_BINDING |
                 GPUTextureUsage.TEXTURE_BINDING,
         });
+
+        /*
+         *   POPULATE HEIGHT TEXTURE WITH PERLIN NOISE
+         */
+        const noise = new Perlin();
+        const heightmap = new Float32Array(
+            this.TEXTURES_W * this.TEXTURES_W * 4
+        ).map((e, i, a) => {
+            if (i % 4 == 0) {
+                let x = i / 4 / this.TEXTURES_W;
+                let y = (i / 4) % this.TEXTURES_W;
+                return noise.perlin(
+                    (x / this.TEXTURES_W) * 4,
+                    (y / this.TEXTURES_W) * 4
+                );
+            }
+            return 0;
+        });
+        this.device.queue.writeTexture(
+            { texture: this.t1_read },
+            heightmap,
+            { bytesPerRow: 4 * 4 * this.TEXTURES_W },
+            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+        );
     }
 
     init_water_increment() {

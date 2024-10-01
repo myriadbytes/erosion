@@ -17,14 +17,17 @@ const grid_mesh = new GridMesh(
     camera.view_matrix_buffer,
     camera.proj_matrix_buffer
 );
-/* 
+
 const compute = new ErosionCompute(device);
-document.getElementById("compute-button")!.addEventListener("mousedown", () => {
+/* document.getElementById("compute-button")!.addEventListener("mousedown", () => {
     compute.run_pass();
 }); */
 
 const render_pipeline_layout = device.createPipelineLayout({
-    bindGroupLayouts: [grid_mesh.bind_group_layout],
+    bindGroupLayouts: [
+        grid_mesh.bind_group_layout,
+        compute.view_bind_group_layout,
+    ],
 });
 
 const render_pipeline = device.createRenderPipeline({
@@ -78,6 +81,7 @@ function render() {
     pass.setVertexBuffer(0, grid_mesh.vertex_buffer);
     pass.setIndexBuffer(grid_mesh.index_buffer, "uint32");
     pass.setBindGroup(0, grid_mesh.bind_group);
+    pass.setBindGroup(1, compute.view_bind_group);
     pass.drawIndexed(grid_mesh.nb_to_draw);
     pass.end();
 
