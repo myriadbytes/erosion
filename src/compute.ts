@@ -2,31 +2,29 @@ import { Perlin } from "./noise";
 import compute_shader_string from "./shaders/compute.wgsl?raw";
 
 export class ErosionCompute {
-    TEXTURES_W = 512;
     device: GPUDevice;
-    bind_group_layout: GPUBindGroupLayout;
-    bind_group: GPUBindGroup;
-    view_bind_group_layout: GPUBindGroupLayout;
-    view_bind_group: GPUBindGroup;
-    terrain_height_texture: GPUTexture;
-    water_height_texture: GPUTexture;
-    compute_shader: GPUShaderModule;
-    pipeline_layout: GPUPipelineLayout;
-    pipeline: GPUComputePipeline;
+    // textures
+    TEXTURES_W = 512;
+    t1_in: GPUTexture;
+    t1_out: GPUTexture;
+    t2_in: GPUTexture;
+    t2_out: GPUTexture;
+    t3_in: GPUTexture;
+    t3_out: GPUTexture;
+    // shaders
+    water_increment_shader: GPUShaderModule;
+
+    // bind group stuff
+    water_increment_bind_group_layout: GPUBindGroupLayout;
+    water_increment_bind_group: GPUBindGroup;
+
+    // pipelines
+    water_increment_pipeline_layout: GPUPipelineLayout;
+    water_increment_pipeline: GPUComputePipeline;
 
     constructor(device: GPUDevice) {
         this.device = device;
-
-        // terrain height (b)
-        this.terrain_height_texture = device.createTexture({
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
-            format: "r32float",
-            usage:
-                GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.COPY_DST,
-        });
-        const noise = new Perlin();
+        /* const noise = new Perlin();
         const heightmap_seed = new Float32Array(
             this.TEXTURES_W * this.TEXTURES_W
         ).map((e, i, a) => {
@@ -38,23 +36,21 @@ export class ErosionCompute {
             );
         });
         device.queue.writeTexture(
-            { texture: this.terrain_height_texture },
+            { texture: this.t1_in },
             heightmap_seed,
             { bytesPerRow: 4 * this.TEXTURES_W },
             { width: this.TEXTURES_W, height: this.TEXTURES_W }
-        );
+        ); */
+    }
 
-        // water height (d)
-        this.water_height_texture = device.createTexture({
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
-            format: "r32float",
-            usage:
-                GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING,
-        });
+    init_textures() {
+        /*
+         *  T1 HOLDS : B (terrain height) D (water height) S (sediments)
+         *  T2 HOLDS : ->F (outgoing flow in all 4 directions)
+         *  T3 HOLDS : ->V (velocity field)
+         */
 
-        /* // outflow flux in 4 directions
-        this.t2 = device.createTexture({
+        this.t1_in = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rgba32float",
             usage:
@@ -62,108 +58,105 @@ export class ErosionCompute {
                 GPUTextureUsage.TEXTURE_BINDING |
                 GPUTextureUsage.COPY_DST,
         });
-
-        // water velocity (u,v)
-        this.t3 = device.createTexture({
+        this.t1_out = this.device.createTexture({
+            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            format: "rgba32float",
+            usage:
+                GPUTextureUsage.STORAGE_BINDING |
+                GPUTextureUsage.TEXTURE_BINDING,
+        });
+        this.t2_in = this.device.createTexture({
+            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            format: "rgba32float",
+            usage:
+                GPUTextureUsage.STORAGE_BINDING |
+                GPUTextureUsage.TEXTURE_BINDING,
+        });
+        this.t2_out = this.device.createTexture({
+            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            format: "rgba32float",
+            usage:
+                GPUTextureUsage.STORAGE_BINDING |
+                GPUTextureUsage.TEXTURE_BINDING,
+        });
+        this.t3_in = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rg32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.COPY_DST,
-        }); */
-
-        this.bind_group_layout = device.createBindGroupLayout({
-            label: "Compute Bindgroup Layout",
-            entries: [
-                // terrain height
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.COMPUTE,
-                    storageTexture: {
-                        access: "read-write",
-                        format: "r32float",
-                    },
-                },
-                // water height
-                {
-                    binding: 1,
-                    visibility: GPUShaderStage.COMPUTE,
-                    storageTexture: {
-                        access: "read-write",
-                        format: "r32float",
-                    },
-                },
-            ],
+                GPUTextureUsage.TEXTURE_BINDING,
         });
-
-        this.bind_group = device.createBindGroup({
-            label: "Compute Bind Group",
-            layout: this.bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.terrain_height_texture.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.water_height_texture.createView(),
-                },
-            ],
-        });
-
-        this.view_bind_group_layout = device.createBindGroupLayout({
-            label: "Compute Textures View Bindgroup Layout",
-            entries: [
-                // terrain height
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                    texture: {},
-                },
-                // water height
-                {
-                    binding: 1,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    texture: {},
-                },
-            ],
-        });
-
-        this.view_bind_group = device.createBindGroup({
-            label: "Compute Textures View Bind Group",
-            layout: this.view_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.terrain_height_texture.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.water_height_texture.createView(),
-                },
-            ],
-        });
-
-        this.compute_shader = device.createShaderModule({
-            label: "Compute Shader",
-            code: compute_shader_string,
-        });
-
-        this.pipeline_layout = device.createPipelineLayout({
-            bindGroupLayouts: [this.bind_group_layout],
-        });
-
-        this.pipeline = device.createComputePipeline({
-            label: "Erosion Compute Pipeline",
-            compute: {
-                module: this.compute_shader,
-            },
-            layout: this.pipeline_layout,
+        this.t3_out = this.device.createTexture({
+            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            format: "rg32float",
+            usage:
+                GPUTextureUsage.STORAGE_BINDING |
+                GPUTextureUsage.TEXTURE_BINDING,
         });
     }
 
-    run_pass() {
+    init_water_increment() {
+        this.water_increment_bind_group_layout =
+            this.device.createBindGroupLayout({
+                label: "Water Increment Bindgroup Layout",
+                entries: [
+                    // bds input
+                    {
+                        binding: 0,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // bds output
+                    {
+                        binding: 3,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "write-only",
+                            format: "rgba32float",
+                        },
+                    },
+                ],
+            });
+
+        this.water_increment_bind_group = this.device.createBindGroup({
+            label: "Water Increment Bind Group",
+            layout: this.water_increment_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_in.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t1_out.createView(),
+                },
+            ],
+        });
+
+        this.water_increment_shader = this.device.createShaderModule({
+            label: "Water Increment Shader",
+            code: compute_shader_string,
+        });
+
+        this.water_increment_pipeline_layout = this.device.createPipelineLayout(
+            {
+                bindGroupLayouts: [this.water_increment_bind_group_layout],
+            }
+        );
+
+        this.water_increment_pipeline = this.device.createComputePipeline({
+            label: "Water Increment Compute Pipeline",
+            compute: {
+                module: this.water_increment_shader,
+            },
+            layout: this.water_increment_pipeline_layout,
+        });
+    }
+
+    /*    run_pass() {
         const encoder = this.device.createCommandEncoder({});
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.pipeline);
@@ -173,5 +166,5 @@ export class ErosionCompute {
 
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
-    }
+    } */
 }
