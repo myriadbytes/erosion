@@ -1,6 +1,7 @@
 import { Perlin } from "./noise";
 import water_increment_shader_string from "./shaders/water_increment.wgsl?raw";
 import outflow_flux_shader_string from "./shaders/outflow_flux.wgsl?raw";
+import water_velocity_shader_string from "./shaders/water_velocity.wgsl?raw";
 
 export class ErosionCompute {
     device: GPUDevice;
@@ -15,18 +16,23 @@ export class ErosionCompute {
     // shaders
     water_increment_shader: GPUShaderModule;
     outflow_flux_shader: GPUShaderModule;
+    water_velocity_shader: GPUShaderModule;
 
     // bind group stuff
     water_increment_bind_group_layout: GPUBindGroupLayout;
     water_increment_bind_group: GPUBindGroup;
     outflow_flux_bind_group_layout: GPUBindGroupLayout;
     outflow_flux_bind_group: GPUBindGroup;
+    water_velocity_bind_group_layout: GPUBindGroupLayout;
+    water_velocity_bind_group: GPUBindGroup;
 
     // pipelines
     water_increment_pipeline_layout: GPUPipelineLayout;
     water_increment_pipeline: GPUComputePipeline;
     outflow_flux_pipeline_layout: GPUPipelineLayout;
     outflow_flux_pipeline: GPUComputePipeline;
+    water_velocity_pipeline_layout: GPUPipelineLayout;
+    water_velocity_pipeline: GPUComputePipeline;
 
     constructor(device: GPUDevice) {
         this.device = device;
@@ -232,6 +238,91 @@ export class ErosionCompute {
                 module: this.outflow_flux_shader,
             },
             layout: this.outflow_flux_pipeline_layout,
+        });
+    }
+
+    init_water_velocity() {
+        this.water_velocity_bind_group_layout =
+            this.device.createBindGroupLayout({
+                label: "Water Velocity Bindgroup Layout",
+                entries: [
+                    // f in
+                    {
+                        binding: 0,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // d in
+                    {
+                        binding: 1,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // d out
+                    {
+                        binding: 2,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "write-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // v out
+                    {
+                        binding: 3,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "write-only",
+                            format: "rgba32float",
+                        },
+                    },
+                ],
+            });
+
+        this.water_velocity_bind_group = this.device.createBindGroup({
+            label: "Water Velocity Bind Group",
+            layout: this.water_velocity_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t2_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t1_write.createView(),
+                },
+                {
+                    binding: 3,
+                    resource: this.t3_write.createView(),
+                },
+            ],
+        });
+
+        this.water_velocity_shader = this.device.createShaderModule({
+            label: "Water Velocity Shader",
+            code: water_velocity_shader_string,
+        });
+
+        this.water_velocity_pipeline_layout = this.device.createPipelineLayout({
+            bindGroupLayouts: [this.water_velocity_bind_group_layout],
+        });
+
+        this.water_velocity_pipeline = this.device.createComputePipeline({
+            label: "Water Velocity Compute Pipeline",
+            compute: {
+                module: this.water_velocity_shader,
+            },
+            layout: this.water_velocity_pipeline_layout,
         });
     }
 
