@@ -59,11 +59,14 @@ export class ErosionCompute {
     constructor(device: GPUDevice) {
         this.device = device;
         this.init_textures();
+
         this.init_water_increment();
         this.init_outflow_flux();
         this.init_water_velocity();
         this.init_erosion_deposition();
         this.init_transportation();
+
+        this.init_buttons();
 
         this.view_bind_group_layout = device.createBindGroupLayout({
             label: "visualization bind group layout",
@@ -71,6 +74,16 @@ export class ErosionCompute {
                 {
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
                     texture: {},
                 },
             ],
@@ -83,6 +96,14 @@ export class ErosionCompute {
                 {
                     binding: 0,
                     resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t2_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t3_read.createView(),
                 },
             ],
         });
@@ -116,28 +137,32 @@ export class ErosionCompute {
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING,
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_DST,
         });
         this.t2_write = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING,
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_SRC,
         });
         this.t3_read = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rg32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING,
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_DST,
         });
         this.t3_write = this.device.createTexture({
             size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
             format: "rg32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
-                GPUTextureUsage.TEXTURE_BINDING,
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_SRC,
         });
 
         /*
@@ -587,6 +612,20 @@ export class ErosionCompute {
         });
     }
 
+    init_buttons() {
+        document
+            .getElementById("water_increment_button")!
+            .addEventListener("mousedown", () => {
+                this.run_water_increment();
+            });
+
+        document
+            .getElementById("outflow_flux_button")!
+            .addEventListener("mousedown", () => {
+                this.run_outflow_flux();
+            });
+    }
+
     run_water_increment() {
         const encoder = this.device.createCommandEncoder({});
         const pass = encoder.beginComputePass();
@@ -597,6 +636,22 @@ export class ErosionCompute {
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
             { texture: this.t1_read },
+            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+        );
+        const command_buffer = encoder.finish();
+        this.device.queue.submit([command_buffer]);
+    }
+
+    run_outflow_flux() {
+        const encoder = this.device.createCommandEncoder({});
+        const pass = encoder.beginComputePass();
+        pass.setPipeline(this.outflow_flux_pipeline);
+        pass.setBindGroup(0, this.outflow_flux_bind_group);
+        pass.dispatchWorkgroups(512 / 16, 512 / 16);
+        pass.end();
+        encoder.copyTextureToTexture(
+            { texture: this.t2_write },
+            { texture: this.t2_read },
             { width: this.TEXTURES_W, height: this.TEXTURES_W }
         );
         const command_buffer = encoder.finish();
