@@ -3,6 +3,8 @@ import water_increment_shader_string from "./shaders/water_increment.wgsl?raw";
 import outflow_flux_shader_string from "./shaders/outflow_flux.wgsl?raw";
 import water_velocity_shader_string from "./shaders/water_velocity.wgsl?raw";
 import erosion_deposition_shader_string from "./shaders/erosion_deposition.wgsl?raw";
+import transportation_shader_string from "./shaders/transportation.wgsl?raw";
+import evaporation_shader_string from "./shaders/evaportation.wgsl?raw";
 
 export class ErosionCompute {
     device: GPUDevice;
@@ -19,6 +21,8 @@ export class ErosionCompute {
     outflow_flux_shader: GPUShaderModule;
     water_velocity_shader: GPUShaderModule;
     erosion_deposition_shader: GPUShaderModule;
+    transportation_shader: GPUShaderModule;
+    evaporation_shader: GPUShaderModule;
 
     // bind group stuff
     water_increment_bind_group_layout: GPUBindGroupLayout;
@@ -29,6 +33,10 @@ export class ErosionCompute {
     water_velocity_bind_group: GPUBindGroup;
     erosion_deposition_bind_group_layout: GPUBindGroupLayout;
     erosion_deposition_bind_group: GPUBindGroup;
+    transportation_bind_group_layout: GPUBindGroupLayout;
+    transportation_bind_group: GPUBindGroup;
+    evaporation_bind_group_layout: GPUBindGroupLayout;
+    evaporation_bind_group: GPUBindGroup;
 
     // pipelines
     water_increment_pipeline_layout: GPUPipelineLayout;
@@ -39,6 +47,10 @@ export class ErosionCompute {
     water_velocity_pipeline: GPUComputePipeline;
     erosion_deposition_pipeline_layout: GPUPipelineLayout;
     erosion_deposition_pipeline: GPUComputePipeline;
+    transportation_pipeline_layout: GPUPipelineLayout;
+    transportation_pipeline: GPUComputePipeline;
+    evaporation_pipeline_layout: GPUPipelineLayout;
+    evaporation_pipeline: GPUComputePipeline;
 
     constructor(device: GPUDevice) {
         this.device = device;
@@ -59,6 +71,13 @@ export class ErosionCompute {
             { bytesPerRow: 4 * this.TEXTURES_W },
             { width: this.TEXTURES_W, height: this.TEXTURES_W }
         ); */
+
+        this.init_textures();
+        this.init_water_increment();
+        this.init_outflow_flux();
+        this.init_water_velocity();
+        this.init_erosion_deposition();
+        this.init_transportation();
     }
 
     init_textures() {
@@ -369,7 +388,7 @@ export class ErosionCompute {
 
         this.erosion_deposition_bind_group = this.device.createBindGroup({
             label: "Erosion Deposition Bind Group",
-            layout: this.water_velocity_bind_group_layout,
+            layout: this.erosion_deposition_bind_group_layout,
             entries: [
                 {
                     binding: 0,
@@ -402,6 +421,136 @@ export class ErosionCompute {
                 module: this.erosion_deposition_shader,
             },
             layout: this.erosion_deposition_pipeline_layout,
+        });
+    }
+
+    init_transportation() {
+        this.transportation_bind_group_layout =
+            this.device.createBindGroupLayout({
+                label: "Transportation Bindgroup Layout",
+                entries: [
+                    // s in
+                    {
+                        binding: 0,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // v in
+                    {
+                        binding: 1,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rg32float",
+                        },
+                    },
+                    // s out
+                    {
+                        binding: 2,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "write-only",
+                            format: "rgba32float",
+                        },
+                    },
+                ],
+            });
+
+        this.transportation_bind_group = this.device.createBindGroup({
+            label: "Transportation Bind Group",
+            layout: this.transportation_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t3_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t1_write.createView(),
+                },
+            ],
+        });
+
+        this.transportation_shader = this.device.createShaderModule({
+            label: "Transportation Shader",
+            code: transportation_shader_string,
+        });
+
+        this.transportation_pipeline_layout = this.device.createPipelineLayout({
+            bindGroupLayouts: [this.transportation_bind_group_layout],
+        });
+
+        this.transportation_pipeline = this.device.createComputePipeline({
+            label: "Transportation Compute Pipeline",
+            compute: {
+                module: this.transportation_shader,
+            },
+            layout: this.transportation_pipeline_layout,
+        });
+    }
+
+    init_evaporation() {
+        this.evaporation_bind_group_layout = this.device.createBindGroupLayout({
+            label: "Evaporation Bindgroup Layout",
+            entries: [
+                // d in
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.COMPUTE,
+                    storageTexture: {
+                        access: "read-only",
+                        format: "rgba32float",
+                    },
+                },
+                // d out
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.COMPUTE,
+                    storageTexture: {
+                        access: "write-only",
+                        format: "rgba32float",
+                    },
+                },
+            ],
+        });
+
+        this.evaporation_bind_group = this.device.createBindGroup({
+            label: "Evaporation Bind Group",
+            layout: this.evaporation_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t1_write.createView(),
+                },
+            ],
+        });
+
+        this.evaporation_shader = this.device.createShaderModule({
+            label: "Evaporation Shader",
+            code: evaporation_shader_string,
+        });
+
+        this.evaporation_pipeline_layout = this.device.createPipelineLayout({
+            bindGroupLayouts: [this.evaporation_bind_group_layout],
+        });
+
+        this.transportation_pipeline = this.device.createComputePipeline({
+            label: "Evaportation Compute Pipeline",
+            compute: {
+                module: this.evaporation_shader,
+            },
+            layout: this.evaporation_pipeline_layout,
         });
     }
 
