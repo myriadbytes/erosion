@@ -2,6 +2,7 @@ import { Perlin } from "./noise";
 import water_increment_shader_string from "./shaders/water_increment.wgsl?raw";
 import outflow_flux_shader_string from "./shaders/outflow_flux.wgsl?raw";
 import water_velocity_shader_string from "./shaders/water_velocity.wgsl?raw";
+import erosion_deposition_shader_string from "./shaders/erosion_deposition.wgsl?raw";
 
 export class ErosionCompute {
     device: GPUDevice;
@@ -17,6 +18,7 @@ export class ErosionCompute {
     water_increment_shader: GPUShaderModule;
     outflow_flux_shader: GPUShaderModule;
     water_velocity_shader: GPUShaderModule;
+    erosion_deposition_shader: GPUShaderModule;
 
     // bind group stuff
     water_increment_bind_group_layout: GPUBindGroupLayout;
@@ -25,6 +27,8 @@ export class ErosionCompute {
     outflow_flux_bind_group: GPUBindGroup;
     water_velocity_bind_group_layout: GPUBindGroupLayout;
     water_velocity_bind_group: GPUBindGroup;
+    erosion_deposition_bind_group_layout: GPUBindGroupLayout;
+    erosion_deposition_bind_group: GPUBindGroup;
 
     // pipelines
     water_increment_pipeline_layout: GPUPipelineLayout;
@@ -33,6 +37,8 @@ export class ErosionCompute {
     outflow_flux_pipeline: GPUComputePipeline;
     water_velocity_pipeline_layout: GPUPipelineLayout;
     water_velocity_pipeline: GPUComputePipeline;
+    erosion_deposition_pipeline_layout: GPUPipelineLayout;
+    erosion_deposition_pipeline: GPUComputePipeline;
 
     constructor(device: GPUDevice) {
         this.device = device;
@@ -279,7 +285,7 @@ export class ErosionCompute {
                         visibility: GPUShaderStage.COMPUTE,
                         storageTexture: {
                             access: "write-only",
-                            format: "rgba32float",
+                            format: "rg32float",
                         },
                     },
                 ],
@@ -323,6 +329,79 @@ export class ErosionCompute {
                 module: this.water_velocity_shader,
             },
             layout: this.water_velocity_pipeline_layout,
+        });
+    }
+
+    init_erosion_deposition() {
+        this.erosion_deposition_bind_group_layout =
+            this.device.createBindGroupLayout({
+                label: "Erosion Deposition Bindgroup Layout",
+                entries: [
+                    // b, s in
+                    {
+                        binding: 0,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
+                    },
+                    // v in
+                    {
+                        binding: 1,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rg32float",
+                        },
+                    },
+                    // b, s out
+                    {
+                        binding: 2,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "write-only",
+                            format: "rgba32float",
+                        },
+                    },
+                ],
+            });
+
+        this.erosion_deposition_bind_group = this.device.createBindGroup({
+            label: "Erosion Deposition Bind Group",
+            layout: this.water_velocity_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t3_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t1_write.createView(),
+                },
+            ],
+        });
+
+        this.erosion_deposition_shader = this.device.createShaderModule({
+            label: "Erosion Deposition Shader",
+            code: erosion_deposition_shader_string,
+        });
+
+        this.erosion_deposition_pipeline_layout =
+            this.device.createPipelineLayout({
+                bindGroupLayouts: [this.erosion_deposition_bind_group_layout],
+            });
+
+        this.erosion_deposition_pipeline = this.device.createComputePipeline({
+            label: "Erosion Deposition Compute Pipeline",
+            compute: {
+                module: this.erosion_deposition_shader,
+            },
+            layout: this.erosion_deposition_pipeline_layout,
         });
     }
 
