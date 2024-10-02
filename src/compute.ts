@@ -678,15 +678,25 @@ export class ErosionCompute {
         this.device.queue.submit([command_buffer]);
     }
 
-    /*    run_pass() {
+    run_erosion_deposition() {
         const encoder = this.device.createCommandEncoder({});
         const pass = encoder.beginComputePass();
-        pass.setPipeline(this.pipeline);
-        pass.setBindGroup(0, this.bind_group);
+        pass.setPipeline(this.erosion_deposition_pipeline);
+        pass.setBindGroup(0, this.erosion_deposition_bind_group);
         pass.dispatchWorkgroups(512 / 16, 512 / 16);
         pass.end();
-
+        encoder.copyTextureToTexture(
+            { texture: this.t1_write },
+            { texture: this.t1_read },
+            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+        );
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
-    } */
+    }
+
+    run_full_step() {
+        this.run_outflow_flux();
+        this.run_water_velocity();
+        this.run_erosion_deposition();
+    }
 }

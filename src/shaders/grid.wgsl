@@ -32,7 +32,7 @@ fn vertexMain(in: Vertex) -> VertexOut {
 
     let height : f32 = textureLoad(terrain_texture, vec2u(in.uv * 511.0), 0).r * 0.1;
 
-    out.pos = proj * view * vec4f(in.pos + vec3f(0, height, 0), 1.0);
+    out.pos = proj * view * vec4f(in.pos + vec3f(0, clamp(height, -.5, .5), 0), 1.0);
     out.uv = in.uv;
 
     return out;
@@ -52,15 +52,13 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
     let flow = textureSample(flow_texture, viz_sampler, in.uv);
     let v = textureSample(velocity_texture, viz_sampler, in.uv);
 
+    let sediment = textureSample(terrain_texture, viz_sampler, in.uv)[2];
+
+    //return vec4f(sediment * 100, sediment * 100, sediment * 100, 1.0);
+
     //return vec4f(v.xy, 1.0, 1.0);
 
     return vec4f(mix(terrain_diffuse, water_color, water * 10), 1.0);
 
     //return vec4f(flow.r * 50., flow.g * 50., flow.b * 50., 1.0);
-
-    //return vec4f(in.uv, 0.0, 1.0);
-
-    //return textureSample(terrain_texture, viz_sampler, in.uv);
-
-    //return textureSample(flow_texture, viz_sampler, in.uv);
 } 

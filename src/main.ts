@@ -56,8 +56,7 @@ const render_pipeline = device.createRenderPipeline({
 });
 
 function render() {
-    compute.run_outflow_flux();
-    compute.run_water_velocity();
+    compute.run_full_step();
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
         colorAttachments: [
