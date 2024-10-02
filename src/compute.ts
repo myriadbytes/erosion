@@ -623,6 +623,12 @@ export class ErosionCompute {
             .addEventListener("mousedown", () => {
                 this.run_water_velocity();
             });
+
+        document
+            .getElementById("erosion_deposition_button")!
+            .addEventListener("mousedown", () => {
+                this.run_erosion_deposition();
+            });
     }
 
     run_water_increment() {

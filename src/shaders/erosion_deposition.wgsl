@@ -10,9 +10,9 @@ var bds_write: texture_storage_2d<rgba32float, write>;
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
     let dim = textureDimensions(bds_read);
 
-    const K_C : f32 = 1.7; // sediment capacity constant
-    const K_S : f32 = 0.4; // sediment dissoving constant
-    const K_D : f32 = 0.5; // sediment deposition constant
+    const K_C : f32 = .5; // sediment capacity constant
+    const K_S : f32 = 0.001; // sediment dissoving constant
+    const K_D : f32 = 0.001; // sediment deposition constant
 
     // find the "local tilt angle"
     let bds = textureLoad(bds_read, id.xy);
@@ -45,19 +45,20 @@ var bds_write: texture_storage_2d<rgba32float, write>;
     let c : f32 = K_C * sin_a * length(v);
     let s : f32 = bds[2];
 
+    var b_change : f32 = 0;
+    var s_change : f32 = 0;
+
     if(c > s) {
         // terrain dissolved into sediment
-        let b_decrease = -K_S * (c - s);
-        let s_increase = K_S * (c - s);
-
-        textureStore(bds_write, id.xy, bds + vec4f(b_decrease, 0, s_increase, 0));
+        b_change = -K_S * (c - s);
+        s_change = K_S * (c - s);   
     }
 
     if(c < s) {
         // sediment deposit into terrain
-        let b_increase = K_D * (s - c);
-        let s_decrease = -K_D * (s - c);
-
-        textureStore(bds_write, id.xy, bds + vec4f(b_increase, 0, s_decrease, 0));
+        b_change = K_D * (s - c);
+        s_change = -K_D * (s - c);
     }
+
+    textureStore(bds_write, id.xy, bds + vec4f(b_change, 0, s_change, 0));
 }
