@@ -1,6 +1,6 @@
 import { mat4, vec3 } from "gl-matrix";
 
-const CLOSEST_ZOOM = 1.0;
+const CLOSEST_ZOOM = 0.7;
 const FURTHEST_ZOOM = 10.0;
 
 export class OrbitCamera {

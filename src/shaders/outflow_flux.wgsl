@@ -8,7 +8,7 @@ var f_read: texture_storage_2d<rgba32float, read>;
 var f_write: texture_storage_2d<rgba32float, write>;
 
 const a: f32 = 1.0;
-const g: f32 = 6.67;
+const g: f32 = 9.81;
 const l: f32 = 1.0;
 
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -45,6 +45,7 @@ const l: f32 = 1.0;
     // outgoing flux
     let f : vec4f = textureLoad(f_read, id.xy);
 
+    // FIXME : sort out the values for lx * ly
     let k = min(1, (bd[1] * l * l) / (f[0] + f[1] + f[2] + f[3])); // scaling factor
 
     let f_l = max(0, f[0] + a * ((g * h_l) / l));
