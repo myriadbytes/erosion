@@ -17,9 +17,11 @@ var v_write : texture_storage_2d<rg32float, write>;
 
     // STEP 1 : update water based on incoming and outgoing flux
 
+    // flux in from the left
+    // f in from the left for (x, y) = f out to the right for (x - 1, y)
     var f_in_l : f32 = 0;
     if(id.x != 0) {
-        f_in_l = textureLoad(f_read, id.xy - vec2u(1, 0))[1]; // f in from the left for (x, y) = f out to the right for (x - 1, y)
+        f_in_l = textureLoad(f_read, id.xy - vec2u(1, 0))[1]; 
     }
 
     var f_in_r : f32 = 0;
@@ -49,4 +51,14 @@ var v_write : texture_storage_2d<rg32float, write>;
     let bds_new = bds + vec4f(0, volume, 0, 0);
 
     textureStore(bds_write, id.xy, bds_new);
+
+    // STEP 2 : calculate the velocity field
+    let water_amount_u : f32 = f_in_l - f_out[0] + f_out[1] - f_in_l;
+    let water_amount_v : f32 = f_in_b - f_out[3] + f_out[2] - f_in_t;
+
+    let average_water : f32 = (bds[1] + bds_new[1]) / 2.0;
+
+    let v: vec2f = vec2f(water_amount_u / average_water, water_amount_v / average_water);
+
+    textureStore(v_write, id.xy, vec4f(v, 0.0, 0.0));
 }

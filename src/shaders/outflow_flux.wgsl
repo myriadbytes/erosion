@@ -7,9 +7,9 @@ var f_read: texture_storage_2d<rgba32float, read>;
 @group(0) @binding(2)
 var f_write: texture_storage_2d<rgba32float, write>;
 
-const a: f32 = 1.0;
-const g: f32 = 9.81;
-const l: f32 = 1.0;
+//const a: f32 = 1.0;
+const g: f32 = 1.0;
+//const l: f32 = 1.0;
 
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
 
@@ -45,15 +45,15 @@ const l: f32 = 1.0;
     // outgoing flux
     let f : vec4f = textureLoad(f_read, id.xy);
 
+    let f_l = max(0, f[0] + (g * h_l));
+    let f_r = max(0, f[1] + (g * h_r));
+    let f_t = max(0, f[2] + (g * h_t));
+    let f_b = max(0, f[3] + (g * h_b));
+
+    let f_new = f + vec4f(f_l, f_r, f_t, f_b);
+
     // FIXME : sort out the values for lx * ly
-    let k = min(1, (bd[1] * l * l) / (f[0] + f[1] + f[2] + f[3])); // scaling factor
+    let k = min(1, bd[1] / (f_new[0] + f_new[1] + f_new[2] + f_new[3])); // scaling factor
 
-    let f_l = max(0, f[0] + a * ((g * h_l) / l));
-    let f_r = max(0, f[1] + a * ((g * h_r) / l));
-    let f_t = max(0, f[2] + a * ((g * h_t) / l));
-    let f_b = max(0, f[3] + a * ((g * h_b) / l));
-
-    let f_new = f + k * vec4f(f_l, f_r, f_t, f_b);
-
-    textureStore(f_write, id.xy, f_new);
+    textureStore(f_write, id.xy, k * f_new);
 }

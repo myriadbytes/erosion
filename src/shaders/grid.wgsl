@@ -40,8 +40,8 @@ fn vertexMain(in: Vertex) -> VertexOut {
 
 @fragment
 fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
-    const terrain_color_dark = vec3f(98./255., 69./255., 45./255.);
-    const terrain_color_light = vec3f(167./255., 117./255., 77./255.);
+    const terrain_color_dark = vec3f(88./255., 59./255., 35./255.);
+    const terrain_color_light = vec3f(177./255., 127./255., 87./255.);
   
     let height = textureSample(terrain_texture, viz_sampler, in.uv)[0];
     let terrain_diffuse = mix(terrain_color_dark, terrain_color_light, height);
@@ -50,9 +50,13 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
     let water = textureSample(terrain_texture, viz_sampler, in.uv)[1];
 
     let flow = textureSample(flow_texture, viz_sampler, in.uv);
-    let flow_color = vec3f(flow[0] - flow[1], flow[2] - flow[3], 0.0);
+    let v = textureSample(velocity_texture, viz_sampler, in.uv);
 
-    return vec4f(mix(terrain_diffuse, water_color, water), 1.0);
+    //return vec4f(v.xy, 1.0, 1.0);
+
+    return vec4f(mix(terrain_diffuse, water_color, water * 10), 1.0);
+
+    //return vec4f(flow.r * 50., flow.g * 50., flow.b * 50., 1.0);
 
     //return vec4f(in.uv, 0.0, 1.0);
 
