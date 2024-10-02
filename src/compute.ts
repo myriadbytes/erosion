@@ -9,7 +9,7 @@ import evaporation_shader_string from "./shaders/evaporation.wgsl?raw";
 export class ErosionCompute {
     device: GPUDevice;
     // textures
-    TEXTURES_W = 512;
+    TEXTURES_W = 1024;
     t1_read: GPUTexture;
     t1_write: GPUTexture;
     t2_read: GPUTexture;
@@ -54,6 +54,7 @@ export class ErosionCompute {
         this.init_water_velocity();
         this.init_erosion_deposition();
         this.init_transportation();
+        this.init_evaporation();
 
         this.init_buttons();
     }
@@ -596,7 +597,7 @@ export class ErosionCompute {
             bindGroupLayouts: [evaporation_bind_group_layout],
         });
 
-        this.transportation_pipeline = this.device.createComputePipeline({
+        this.evaporation_pipeline = this.device.createComputePipeline({
             label: "Evaportation Compute Pipeline",
             compute: {
                 module: this.evaporation_shader,
@@ -636,7 +637,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.water_increment_pipeline);
         pass.setBindGroup(0, this.water_increment_bind_group);
-        pass.dispatchWorkgroups(512 / 16, 512 / 16);
+        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
@@ -652,7 +653,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.outflow_flux_pipeline);
         pass.setBindGroup(0, this.outflow_flux_bind_group);
-        pass.dispatchWorkgroups(512 / 16, 512 / 16);
+        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t2_write },
@@ -668,7 +669,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.water_velocity_pipeline);
         pass.setBindGroup(0, this.water_velocity_bind_group);
-        pass.dispatchWorkgroups(512 / 16, 512 / 16);
+        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
@@ -689,7 +690,39 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.erosion_deposition_pipeline);
         pass.setBindGroup(0, this.erosion_deposition_bind_group);
-        pass.dispatchWorkgroups(512 / 16, 512 / 16);
+        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.end();
+        encoder.copyTextureToTexture(
+            { texture: this.t1_write },
+            { texture: this.t1_read },
+            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+        );
+        const command_buffer = encoder.finish();
+        this.device.queue.submit([command_buffer]);
+    }
+
+    run_transportation() {
+        const encoder = this.device.createCommandEncoder({});
+        const pass = encoder.beginComputePass();
+        pass.setPipeline(this.transportation_pipeline);
+        pass.setBindGroup(0, this.transportation_bind_group);
+        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.end();
+        encoder.copyTextureToTexture(
+            { texture: this.t1_write },
+            { texture: this.t1_read },
+            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+        );
+        const command_buffer = encoder.finish();
+        this.device.queue.submit([command_buffer]);
+    }
+
+    run_evaporation() {
+        const encoder = this.device.createCommandEncoder({});
+        const pass = encoder.beginComputePass();
+        pass.setPipeline(this.evaporation_pipeline);
+        pass.setBindGroup(0, this.evaporation_bind_group);
+        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
@@ -701,8 +734,11 @@ export class ErosionCompute {
     }
 
     run_full_step() {
+        this.run_water_increment();
         this.run_outflow_flux();
         this.run_water_velocity();
         this.run_erosion_deposition();
+        this.run_transportation();
+        this.run_evaporation();
     }
 }

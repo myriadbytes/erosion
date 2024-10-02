@@ -30,7 +30,7 @@ var velocity_texture: texture_2d<f32>;
 fn vertexMain(in: Vertex) -> VertexOut {
     var out: VertexOut;
 
-    let height : f32 = textureLoad(terrain_texture, vec2u(in.uv * 511.0), 0).r * 0.1;
+    let height : f32 = textureLoad(terrain_texture, vec2u(in.uv * 511.0), 0).r * 0.2;
     out.pos = proj * view * vec4f(in.pos + vec3f(0, clamp(height, -.5, .5), 0), 1.0);
 
     //out.pos = proj * view * vec4f(in.pos, 1.0);
@@ -43,6 +43,7 @@ fn vertexMain(in: Vertex) -> VertexOut {
 fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
     const terrain_color_dark = vec3f(88./255., 59./255., 35./255.);
     const terrain_color_light = vec3f(177./255., 127./255., 87./255.);
+    const sediment_color = vec3f(254./255., 215./255., 102./255.);
   
     let height = textureSample(terrain_texture, viz_sampler, in.uv)[0];
     let terrain_diffuse = mix(terrain_color_dark, terrain_color_light, height);
@@ -55,10 +56,11 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
     let sediment = textureSample(terrain_texture, viz_sampler, in.uv)[2];
 
+    return vec4f(mix(mix(terrain_diffuse, sediment_color, sediment*100), water_color, water * 10), 1.0);
 
-    return vec4f(sediment * 100, sediment * 100, sediment * 100, 1.0);
+    //return vec4f(sediment * 100, sediment * 100, sediment * 100, 1.0);
 
-    //return vec4f(v.xy, 1.0, 1.0);
+    //return vec4f(-v.xy, 0.0, 1.0);
 
     //return vec4f(mix(terrain_diffuse, water_color, water * 10), 1.0);
 
