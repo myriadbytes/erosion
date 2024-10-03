@@ -60,10 +60,6 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
     let sediment = textureSample(terrain_texture, viz_sampler, in.uv)[2];
 
-    
-
-    //return vec4f(sediment * 100, sediment * 100, sediment * 100, 1.0);
-
     //return vec4f(v.xy, 0.0, 1.0);
 
     // DEBUG TERRAIN
@@ -74,10 +70,10 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
     // DEBUG FLUX
     if(visualization_type == 1){
-        return vec4f(flow[0] * 10, 0.0, flow[1] * 10, 1.0);
+        return vec4f(flow[0] * 1000, 0.0, flow[1] * 1000, 1.0);
     }
     if(visualization_type == 2){
-        return vec4f(flow[2] * 10, 0.0, flow[3] * 10, 1.0);
+        return vec4f(flow[2] * 1000, 0.0, flow[3] * 1000, 1.0);
     }
 
     // DEBUG VELOCITY FIELD
@@ -96,12 +92,13 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
         }
     }
 
+    // DEBUG SEDIMENTS
+    if(visualization_type == 5){
+        return vec4f(sediment * 100, sediment * 100, sediment * 100, 1.0);
+    }
+
     return vec4f(1.0, 0.0, 0.0, 1.0);
 
-    
-    
-
-    
 
     //return textureSample(terrain_texture, viz_sampler, in.uv);
 } 

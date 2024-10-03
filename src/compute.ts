@@ -650,6 +650,12 @@ export class ErosionCompute {
             });
 
         document
+            .getElementById("transportation_button")!
+            .addEventListener("mousedown", () => {
+                this.run_transportation();
+            });
+
+        document
             .getElementById("full_step_button")!
             .addEventListener("mousedown", () => {
                 for (
@@ -693,6 +699,9 @@ export class ErosionCompute {
                                     break;
                                 case "velocity-y":
                                     value = 4;
+                                    break;
+                                case "sediment":
+                                    value = 5;
                                     break;
                                 default:
                                     value = 10;
@@ -814,7 +823,7 @@ export class ErosionCompute {
         this.run_outflow_flux();
         this.run_water_velocity();
         this.run_erosion_deposition();
-        this.run_transportation();
+        //this.run_transportation();
         this.run_evaporation();
     }
 }
