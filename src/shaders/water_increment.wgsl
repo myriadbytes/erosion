@@ -10,7 +10,6 @@ var bds_write: texture_storage_2d<rgba32float, write>;
     // actually it's because it creates negative water height
     // but i'm keeping the fixme to remind myself that i need to deal with negative water height
     let rainfall = abs((cos(f32(id.x)) + cos(f32(id.y)))) * (0.0001); 
-
     let bds_new = bds + vec4f(0, rainfall, 0, 0);
     textureStore(bds_write, id.xy, bds_new);
 }

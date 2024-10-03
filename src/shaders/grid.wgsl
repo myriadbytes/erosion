@@ -26,11 +26,15 @@ var flow_texture: texture_2d<f32>;
 @group(1) @binding(2)
 var velocity_texture: texture_2d<f32>;
 
+@group(1) @binding(3)
+var<uniform> visualization_type: u32;
+
 @vertex
 fn vertexMain(in: Vertex) -> VertexOut {
     var out: VertexOut;
 
-    let height : f32 = textureLoad(terrain_texture, vec2u(in.uv * 511.0), 0).r * 0.2;
+    let dim = textureDimensions(terrain_texture);
+    let height : f32 = textureLoad(terrain_texture, vec2u(in.uv * f32(dim.x - 1)), 0).r * 0.2;
     out.pos = proj * view * vec4f(in.pos + vec3f(0, clamp(height, -.5, .5), 0), 1.0);
 
     //out.pos = proj * view * vec4f(in.pos, 1.0);
@@ -56,15 +60,48 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
     let sediment = textureSample(terrain_texture, viz_sampler, in.uv)[2];
 
-    return vec4f(mix(mix(terrain_diffuse, sediment_color, sediment*100), water_color, water * 10), 1.0);
+    
 
     //return vec4f(sediment * 100, sediment * 100, sediment * 100, 1.0);
 
-    //return vec4f(-v.xy, 0.0, 1.0);
+    //return vec4f(v.xy, 0.0, 1.0);
 
-    //return vec4f(mix(terrain_diffuse, water_color, water * 10), 1.0);
+    // DEBUG TERRAIN
+    if(visualization_type == 0){
+        return vec4f(mix(mix(terrain_diffuse, sediment_color, sediment*10), water_color, water * 10), 1.0);
+        //return vec4f(mix(terrain_diffuse, water_color, water * 10), 1.0);
+    }
 
-    //return vec4f(flow.r * 50., flow.g * 50., flow.b * 50., 1.0);
+    // DEBUG FLUX
+    if(visualization_type == 1){
+        return vec4f(flow[0] * 10, 0.0, flow[1] * 10, 1.0);
+    }
+    if(visualization_type == 2){
+        return vec4f(flow[2] * 10, 0.0, flow[3] * 10, 1.0);
+    }
+
+    // DEBUG VELOCITY FIELD
+    if(visualization_type == 3){
+        if(v.x > 0) {
+            return vec4f(v.x, 0.0, 0.0, 1.0);
+        } else {
+            return vec4f(0.0, 0.0, abs(v.x), 1.0);
+        }
+    }
+    if(visualization_type == 4){
+        if(v.y > 0) {
+            return vec4f(v.y, 0.0, 0.0, 1.0);
+        } else {
+            return vec4f(0.0, 0.0, abs(v.y), 1.0);
+        }
+    }
+
+    return vec4f(1.0, 0.0, 0.0, 1.0);
+
+    
+    
+
+    
 
     //return textureSample(terrain_texture, viz_sampler, in.uv);
 } 

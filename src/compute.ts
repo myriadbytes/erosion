@@ -9,7 +9,7 @@ import evaporation_shader_string from "./shaders/evaporation.wgsl?raw";
 export class ErosionCompute {
     device: GPUDevice;
     // textures
-    TEXTURES_W = 1024;
+    TEXTURES_W = 64;
     t1_read: GPUTexture;
     t1_write: GPUTexture;
     t2_read: GPUTexture;
@@ -43,6 +43,7 @@ export class ErosionCompute {
     // for visualization
     view_bind_group_layout: GPUBindGroupLayout;
     view_bind_group: GPUBindGroup;
+    view_type_buffer: GPUBuffer;
 
     constructor(device: GPUDevice) {
         this.device = device;
@@ -132,8 +133,8 @@ export class ErosionCompute {
                 let x = i / 4 / this.TEXTURES_W;
                 let y = (i / 4) % this.TEXTURES_W;
                 return noise.perlin(
-                    (x / this.TEXTURES_W) * 4,
-                    (y / this.TEXTURES_W) * 4
+                    (x / this.TEXTURES_W) * 6,
+                    (y / this.TEXTURES_W) * 6
                 );
             }
             return 0;
@@ -147,6 +148,12 @@ export class ErosionCompute {
     }
 
     init_viz_and_params() {
+        this.view_type_buffer = this.device.createBuffer({
+            label: "visualization type buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
         this.view_bind_group_layout = this.device.createBindGroupLayout({
             label: "visualization bind group layout",
             entries: [
@@ -164,6 +171,11 @@ export class ErosionCompute {
                     binding: 2,
                     visibility: GPUShaderStage.FRAGMENT,
                     texture: {},
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: {},
                 },
             ],
         });
@@ -183,6 +195,12 @@ export class ErosionCompute {
                 {
                     binding: 2,
                     resource: this.t3_read.createView(),
+                },
+                {
+                    binding: 3,
+                    resource: {
+                        buffer: this.view_type_buffer,
+                    },
                 },
             ],
         });
@@ -629,6 +647,64 @@ export class ErosionCompute {
             .getElementById("erosion_deposition_button")!
             .addEventListener("mousedown", () => {
                 this.run_erosion_deposition();
+            });
+
+        document
+            .getElementById("full_step_button")!
+            .addEventListener("mousedown", () => {
+                for (
+                    let i = 0;
+                    i <
+                    Number(
+                        (
+                            document.getElementById(
+                                "steps_input"
+                            )! as HTMLInputElement
+                        ).value
+                    );
+                    i++
+                ) {
+                    this.run_full_step();
+                }
+            });
+
+        // add event for radio button change
+        // sends the type of visualization to the shader
+        document
+            .querySelectorAll('input[name="visualization"]')
+            .forEach((radio: Element) => {
+                if (radio instanceof HTMLInputElement) {
+                    radio.addEventListener("change", (event: Event) => {
+                        const target = event.target as HTMLInputElement;
+                        if (target.checked) {
+                            let value = 0;
+                            switch (target.value) {
+                                case "terrain":
+                                    value = 0;
+                                    break;
+                                case "flow-x":
+                                    value = 1;
+                                    break;
+                                case "flow-y":
+                                    value = 2;
+                                    break;
+                                case "velocity-x":
+                                    value = 3;
+                                    break;
+                                case "velocity-y":
+                                    value = 4;
+                                    break;
+                                default:
+                                    value = 10;
+                            }
+                            this.device.queue.writeBuffer(
+                                this.view_type_buffer,
+                                0,
+                                new Uint32Array([value])
+                            );
+                        }
+                    });
+                }
             });
     }
 
