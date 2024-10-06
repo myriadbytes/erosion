@@ -12,8 +12,8 @@ var bds_write: texture_storage_2d<rgba32float, write>;
 
     let v : vec2f = textureLoad(v_read, id.xy).xy;
     
-    let x : u32 = clamp(u32(f32(id.x) - v.x), 0, dim.x - 1);
-    let y : u32 = clamp(u32(f32(id.y) - v.y), 0, dim.y - 1);
+    let x : u32 = clamp(u32(f32(id.x) - v.x * 5.0), 0, dim.x - 1);
+    let y : u32 = clamp(u32(f32(id.y) - v.y * 5.0), 0, dim.y - 1);
 
     let s : f32 = textureLoad(bds_read, vec2u(x, y))[2];
 

@@ -8,8 +8,9 @@ import evaporation_shader_string from "./shaders/evaporation.wgsl?raw";
 
 export class ErosionCompute {
     device: GPUDevice;
+    running: boolean = true;
     // textures
-    TEXTURES_W = 64;
+    TEXTURES_W = 256;
     t1_read: GPUTexture;
     t1_write: GPUTexture;
     t2_read: GPUTexture;
@@ -122,6 +123,10 @@ export class ErosionCompute {
                 GPUTextureUsage.COPY_SRC,
         });
 
+        this.init_heightmap();
+    }
+
+    init_heightmap() {
         /*
          *   POPULATE HEIGHT TEXTURE WITH PERLIN NOISE
          */
@@ -715,6 +720,18 @@ export class ErosionCompute {
                     });
                 }
             });
+
+        document
+            .getElementById("start_stop_button")!
+            .addEventListener("mousedown", () => {
+                this.running = !this.running;
+            });
+
+        document
+            .getElementById("reset_button")!
+            .addEventListener("mousedown", () => {
+                this.init_heightmap();
+            });
     }
 
     run_water_increment() {
@@ -823,7 +840,7 @@ export class ErosionCompute {
         this.run_outflow_flux();
         this.run_water_velocity();
         this.run_erosion_deposition();
-        //this.run_transportation();
+        this.run_transportation();
         this.run_evaporation();
     }
 }

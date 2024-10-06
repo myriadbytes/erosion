@@ -10,7 +10,7 @@ var bds_write: texture_storage_2d<rgba32float, write>;
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
     let dim = textureDimensions(bds_read);
 
-    const K_C : f32 = 1.5; // sediment capacity constant
+    const K_C : f32 = 0.2; // sediment capacity constant
     const K_S : f32 = 0.01; // sediment dissoving constant
     const K_D : f32 = 0.01; // sediment deposition constant
 
