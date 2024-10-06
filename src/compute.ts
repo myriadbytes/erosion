@@ -57,8 +57,6 @@ export class ErosionCompute {
         this.init_erosion_deposition();
         this.init_transportation();
         this.init_evaporation();
-
-        this.init_buttons();
     }
 
     init_textures() {
@@ -627,111 +625,6 @@ export class ErosionCompute {
             },
             layout: evaporation_pipeline_layout,
         });
-    }
-
-    init_buttons() {
-        document
-            .getElementById("water_increment_button")!
-            .addEventListener("mousedown", () => {
-                this.run_water_increment();
-            });
-
-        document
-            .getElementById("outflow_flux_button")!
-            .addEventListener("mousedown", () => {
-                this.run_outflow_flux();
-            });
-
-        document
-            .getElementById("water_velocity_button")!
-            .addEventListener("mousedown", () => {
-                this.run_water_velocity();
-            });
-
-        document
-            .getElementById("erosion_deposition_button")!
-            .addEventListener("mousedown", () => {
-                this.run_erosion_deposition();
-            });
-
-        document
-            .getElementById("transportation_button")!
-            .addEventListener("mousedown", () => {
-                this.run_transportation();
-            });
-
-        document
-            .getElementById("full_step_button")!
-            .addEventListener("mousedown", () => {
-                for (
-                    let i = 0;
-                    i <
-                    Number(
-                        (
-                            document.getElementById(
-                                "steps_input"
-                            )! as HTMLInputElement
-                        ).value
-                    );
-                    i++
-                ) {
-                    this.run_full_step();
-                }
-            });
-
-        // add event for radio button change
-        // sends the type of visualization to the shader
-        document
-            .querySelectorAll('input[name="visualization"]')
-            .forEach((radio: Element) => {
-                if (radio instanceof HTMLInputElement) {
-                    radio.addEventListener("change", (event: Event) => {
-                        const target = event.target as HTMLInputElement;
-                        if (target.checked) {
-                            let value = 0;
-                            switch (target.value) {
-                                case "terrain":
-                                    value = 0;
-                                    break;
-                                case "flow-x":
-                                    value = 1;
-                                    break;
-                                case "flow-y":
-                                    value = 2;
-                                    break;
-                                case "velocity-x":
-                                    value = 3;
-                                    break;
-                                case "velocity-y":
-                                    value = 4;
-                                    break;
-                                case "sediment":
-                                    value = 5;
-                                    break;
-                                default:
-                                    value = 10;
-                            }
-                            this.device.queue.writeBuffer(
-                                this.view_type_buffer,
-                                0,
-                                new Uint32Array([value])
-                            );
-                        }
-                    });
-                }
-            });
-
-        document
-            .getElementById("start_stop_button")!
-            .addEventListener("mousedown", () => {
-                this.running = !this.running;
-            });
-
-        document
-            .getElementById("reset_button")!
-            .addEventListener("mousedown", () => {
-                this.init_heightmap();
-            });
     }
 
     run_water_increment() {

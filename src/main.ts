@@ -7,6 +7,7 @@ import gridShaderString from "./shaders/grid.wgsl?raw";
 import { OrbitCamera } from "./camera";
 import { Perlin } from "./noise";
 import { ErosionCompute } from "./compute";
+import { setup_controls } from "./ui";
 
 const { device, context, canvasFormat, depthTexture } = await InitWebGPU();
 
@@ -19,6 +20,7 @@ const grid_mesh = new GridMesh(
 );
 
 const compute = new ErosionCompute(device);
+setup_controls(compute);
 
 const render_pipeline_layout = device.createPipelineLayout({
     bindGroupLayouts: [
