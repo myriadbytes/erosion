@@ -64,7 +64,7 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
     // DEBUG TERRAIN
     if(visualization_type == 0){
-        return vec4f(mix(mix(terrain_diffuse, sediment_color, sediment*10), water_color, water * 10), 1.0);
+        return vec4f(mix(mix(terrain_diffuse, sediment_color, sediment*30), water_color, water * 10), 1.0);
         //return vec4f(mix(terrain_diffuse, water_color, water * 10), 1.0);
     }
 

@@ -42,14 +42,47 @@ export function setup_controls(compute: ErosionCompute) {
         });
 
     document
-        .getElementById("start_stop_button")!
+        .getElementById("start-stop-button")!
         .addEventListener("mousedown", () => {
             compute.running = !compute.running;
         });
 
     document
-        .getElementById("reset_button")!
+        .getElementById("reset-button")!
         .addEventListener("mousedown", () => {
             compute.init_heightmap();
         });
+
+    // parameters
+    let update_parameter_buffer = (buffer: GPUBuffer, value: number) => {
+        compute.device.queue.writeBuffer(buffer, 0, new Float32Array([value]));
+    };
+
+    let timestep_input = document.getElementById(
+        "timestep-input"
+    ) as HTMLInputElement;
+    timestep_input.addEventListener("input", () => {
+        update_parameter_buffer(
+            compute.timestep_param_buffer,
+            Number(timestep_input.value)
+        );
+    });
+    update_parameter_buffer(
+        compute.timestep_param_buffer,
+        Number(timestep_input.value)
+    ); // send default value to the gpu
+
+    let rainfall_input = document.getElementById(
+        "rainfall-input"
+    ) as HTMLInputElement;
+    rainfall_input.addEventListener("input", () => {
+        update_parameter_buffer(
+            compute.rainfall_param_buffer,
+            Number(rainfall_input.value)
+        );
+    });
+    update_parameter_buffer(
+        compute.rainfall_param_buffer,
+        Number(rainfall_input.value)
+    );
 }

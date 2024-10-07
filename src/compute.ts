@@ -46,6 +46,17 @@ export class ErosionCompute {
     view_bind_group: GPUBindGroup;
     view_type_buffer: GPUBuffer;
 
+    // for parameters
+    params_bind_group_layout: GPUBindGroupLayout;
+    params_bind_group: GPUBindGroup;
+    timestep_param_buffer: GPUBuffer;
+    rainfall_param_buffer: GPUBuffer;
+    g_param_buffer: GPUBuffer;
+    kc_param_buffer: GPUBuffer;
+    ks_param_buffer: GPUBuffer;
+    kd_param_buffer: GPUBuffer;
+    evaporation_param_buffer: GPUBuffer;
+
     constructor(device: GPUDevice) {
         this.device = device;
         this.init_textures();
@@ -207,6 +218,138 @@ export class ErosionCompute {
                 },
             ],
         });
+
+        this.params_bind_group_layout = this.device.createBindGroupLayout({
+            label: "parameters bind group layout",
+            entries: [
+                {
+                    binding: 0, // timestep
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {},
+                },
+                {
+                    binding: 1, // rainfall
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {},
+                },
+                {
+                    binding: 2, // gravity
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {},
+                },
+                {
+                    binding: 3, // kc
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {},
+                },
+                {
+                    binding: 4, // ks
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {},
+                },
+                {
+                    binding: 5, // kd
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {},
+                },
+                {
+                    binding: 6, // evaporation
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: {},
+                },
+            ],
+        });
+
+        this.timestep_param_buffer = this.device.createBuffer({
+            label: "timestep parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.rainfall_param_buffer = this.device.createBuffer({
+            label: "rainfall parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.g_param_buffer = this.device.createBuffer({
+            label: "gravity parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.kc_param_buffer = this.device.createBuffer({
+            label: "kc parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.ks_param_buffer = this.device.createBuffer({
+            label: "ks parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.kd_param_buffer = this.device.createBuffer({
+            label: "kd parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.evaporation_param_buffer = this.device.createBuffer({
+            label: "evaporation parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.params_bind_group = this.device.createBindGroup({
+            label: "parameters bind group",
+            layout: this.params_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: this.timestep_param_buffer,
+                    },
+                },
+                {
+                    binding: 1,
+                    resource: {
+                        buffer: this.rainfall_param_buffer,
+                    },
+                },
+                {
+                    binding: 2,
+                    resource: {
+                        buffer: this.g_param_buffer,
+                    },
+                },
+                {
+                    binding: 3,
+                    resource: {
+                        buffer: this.kc_param_buffer,
+                    },
+                },
+                {
+                    binding: 4,
+                    resource: {
+                        buffer: this.ks_param_buffer,
+                    },
+                },
+                {
+                    binding: 5,
+                    resource: {
+                        buffer: this.kd_param_buffer,
+                    },
+                },
+                {
+                    binding: 6,
+                    resource: {
+                        buffer: this.evaporation_param_buffer,
+                    },
+                },
+            ],
+        });
     }
 
     init_water_increment() {
@@ -256,7 +399,10 @@ export class ErosionCompute {
         });
 
         let water_increment_pipeline_layout = this.device.createPipelineLayout({
-            bindGroupLayouts: [water_increment_bind_group_layout],
+            bindGroupLayouts: [
+                water_increment_bind_group_layout,
+                this.params_bind_group_layout,
+            ],
         });
 
         this.water_increment_pipeline = this.device.createComputePipeline({
@@ -632,6 +778,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.water_increment_pipeline);
         pass.setBindGroup(0, this.water_increment_bind_group);
+        pass.setBindGroup(1, this.params_bind_group);
         pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
