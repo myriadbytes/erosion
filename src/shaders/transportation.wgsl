@@ -7,13 +7,16 @@ var v_read: texture_storage_2d<rg32float, read>;
 @group(0) @binding(2)
 var bds_write: texture_storage_2d<rgba32float, write>;
 
+@group(1) @binding(0)
+var<uniform> timestep: f32;
+
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
     let dim = textureDimensions(v_read);
 
     let v : vec2f = textureLoad(v_read, id.xy).xy;
     
-    let x : u32 = clamp(u32(f32(id.x) - v.x * 5.0), 0, dim.x - 1);
-    let y : u32 = clamp(u32(f32(id.y) - v.y * 5.0), 0, dim.y - 1);
+    let x : u32 = clamp(u32(f32(id.x) - (v.x * timestep)), 0, dim.x - 1);
+    let y : u32 = clamp(u32(f32(id.y) - (v.y * timestep)), 0, dim.y - 1);
 
     let s : f32 = textureLoad(bds_read, vec2u(x, y))[2];
 

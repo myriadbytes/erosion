@@ -7,12 +7,17 @@ var v_read: texture_storage_2d<rg32float, read>;
 @group(0) @binding(2)
 var bds_write: texture_storage_2d<rgba32float, write>;
 
+@group(1) @binding(3)
+var<uniform> K_C: f32;
+
+@group(1) @binding(4)
+var<uniform> K_S: f32;
+
+@group(1) @binding(5)
+var<uniform> K_D: f32;
+
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
     let dim = textureDimensions(bds_read);
-
-    const K_C : f32 = 0.2; // sediment capacity constant
-    const K_S : f32 = 0.01; // sediment dissoving constant
-    const K_D : f32 = 0.01; // sediment deposition constant
 
     // find the "local tilt angle"
     let bds = textureLoad(bds_read, id.xy);

@@ -131,6 +131,7 @@ header {
 
 #control-panel {
     grid-area: control-panel;
+    overflow-y: scroll;
 }
 
 #info-panel {

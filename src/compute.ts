@@ -473,7 +473,10 @@ export class ErosionCompute {
         });
 
         let outflow_flux_pipeline_layout = this.device.createPipelineLayout({
-            bindGroupLayouts: [outflow_flux_bind_group_layout],
+            bindGroupLayouts: [
+                outflow_flux_bind_group_layout,
+                this.params_bind_group_layout,
+            ],
         });
 
         this.outflow_flux_pipeline = this.device.createComputePipeline({
@@ -558,7 +561,10 @@ export class ErosionCompute {
         });
 
         let water_velocity_pipeline_layout = this.device.createPipelineLayout({
-            bindGroupLayouts: [water_velocity_bind_group_layout],
+            bindGroupLayouts: [
+                water_velocity_bind_group_layout,
+                this.params_bind_group_layout,
+            ],
         });
 
         this.water_velocity_pipeline = this.device.createComputePipeline({
@@ -631,7 +637,10 @@ export class ErosionCompute {
 
         let erosion_deposition_pipeline_layout =
             this.device.createPipelineLayout({
-                bindGroupLayouts: [erosion_deposition_bind_group_layout],
+                bindGroupLayouts: [
+                    erosion_deposition_bind_group_layout,
+                    this.params_bind_group_layout,
+                ],
             });
 
         this.erosion_deposition_pipeline = this.device.createComputePipeline({
@@ -703,7 +712,10 @@ export class ErosionCompute {
         });
 
         let transportation_pipeline_layout = this.device.createPipelineLayout({
-            bindGroupLayouts: [transportation_bind_group_layout],
+            bindGroupLayouts: [
+                transportation_bind_group_layout,
+                this.params_bind_group_layout,
+            ],
         });
 
         this.transportation_pipeline = this.device.createComputePipeline({
@@ -761,7 +773,10 @@ export class ErosionCompute {
         });
 
         let evaporation_pipeline_layout = this.device.createPipelineLayout({
-            bindGroupLayouts: [evaporation_bind_group_layout],
+            bindGroupLayouts: [
+                evaporation_bind_group_layout,
+                this.params_bind_group_layout,
+            ],
         });
 
         this.evaporation_pipeline = this.device.createComputePipeline({
@@ -795,6 +810,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.outflow_flux_pipeline);
         pass.setBindGroup(0, this.outflow_flux_bind_group);
+        pass.setBindGroup(1, this.params_bind_group);
         pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
@@ -811,6 +827,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.water_velocity_pipeline);
         pass.setBindGroup(0, this.water_velocity_bind_group);
+        pass.setBindGroup(1, this.params_bind_group);
         pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
@@ -832,6 +849,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.erosion_deposition_pipeline);
         pass.setBindGroup(0, this.erosion_deposition_bind_group);
+        pass.setBindGroup(1, this.params_bind_group);
         pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
@@ -848,6 +866,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.transportation_pipeline);
         pass.setBindGroup(0, this.transportation_bind_group);
+        pass.setBindGroup(1, this.params_bind_group);
         pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(
@@ -864,6 +883,7 @@ export class ErosionCompute {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.evaporation_pipeline);
         pass.setBindGroup(0, this.evaporation_bind_group);
+        pass.setBindGroup(1, this.params_bind_group);
         pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
         pass.end();
         encoder.copyTextureToTexture(

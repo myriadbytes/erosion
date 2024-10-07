@@ -10,6 +10,8 @@ var bds_write : texture_storage_2d<rgba32float, write>;
 @group(0) @binding(3)
 var v_write : texture_storage_2d<rg32float, write>;
 
+@group(1) @binding(0)
+var<uniform> timestep: f32;
 
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
     
@@ -45,7 +47,7 @@ var v_write : texture_storage_2d<rg32float, write>;
     let total_out : f32 = f_out[0] + f_out[1] + f_out[2] + f_out[3];
 
    // FIXME : add the scaling by lx * ly
-    let volume : f32 = total_in - total_out;
+    let volume : f32 = timestep *(total_in - total_out);
 
     let bds = textureLoad(bds_read, id.xy);
     let bds_new = bds + vec4f(0, volume, 0, 0);

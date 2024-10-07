@@ -85,4 +85,51 @@ export function setup_controls(compute: ErosionCompute) {
         compute.rainfall_param_buffer,
         Number(rainfall_input.value)
     );
+
+    let g_input = document.getElementById("g-input") as HTMLInputElement;
+    g_input.addEventListener("input", () => {
+        update_parameter_buffer(compute.g_param_buffer, Number(g_input.value));
+    });
+    update_parameter_buffer(compute.g_param_buffer, Number(g_input.value));
+
+    let kc_input = document.getElementById("kc-input") as HTMLInputElement;
+    kc_input.addEventListener("input", () => {
+        update_parameter_buffer(
+            compute.kc_param_buffer,
+            Number(kc_input.value)
+        );
+    });
+    update_parameter_buffer(compute.kc_param_buffer, Number(kc_input.value));
+
+    let ks_input = document.getElementById("ks-input") as HTMLInputElement;
+    ks_input.addEventListener("input", () => {
+        update_parameter_buffer(
+            compute.ks_param_buffer,
+            Number(ks_input.value)
+        );
+    });
+    update_parameter_buffer(compute.ks_param_buffer, Number(ks_input.value));
+
+    let kd_input = document.getElementById("kd-input") as HTMLInputElement;
+    kd_input.addEventListener("input", () => {
+        update_parameter_buffer(
+            compute.kd_param_buffer,
+            Number(kd_input.value)
+        );
+    });
+    update_parameter_buffer(compute.kd_param_buffer, Number(kd_input.value));
+
+    let evaporation_input = document.getElementById(
+        "evaporation-input"
+    ) as HTMLInputElement;
+    evaporation_input.addEventListener("input", () => {
+        update_parameter_buffer(
+            compute.evaporation_param_buffer,
+            Number(evaporation_input.value)
+        );
+    });
+    update_parameter_buffer(
+        compute.evaporation_param_buffer,
+        Number(evaporation_input.value)
+    );
 }
