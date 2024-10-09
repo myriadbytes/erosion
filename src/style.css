@@ -137,9 +137,12 @@ body {
     grid-area: info-panel;
     display: flex;
     flex-direction: column;
-    gap: 1em;
 }
 
 fieldset {
     margin: 0.5em;
+}
+
+p {
+    margin-bottom: 1em;
 }

@@ -50,29 +50,9 @@ export function setup_controls(compute: ErosionCompute) {
     document
         .getElementById("reset-button")!
         .addEventListener("mousedown", () => {
-            compute.init_heightmap();
-
-            compute.device.queue.writeTexture(
-                { texture: compute.t2_read },
-                new Float32Array(compute.TEXTURES_W * compute.TEXTURES_W * 4),
-                {
-                    offset: 0,
-                    bytesPerRow: 4 * 4 * compute.TEXTURES_W,
-                    rowsPerImage: compute.TEXTURES_W,
-                },
-                { width: compute.TEXTURES_W, height: compute.TEXTURES_W }
-            );
-
-            compute.device.queue.writeTexture(
-                { texture: compute.t3_read },
-                new Float32Array(compute.TEXTURES_W * compute.TEXTURES_W * 2),
-                {
-                    offset: 0,
-                    bytesPerRow: 4 * 2 * compute.TEXTURES_W,
-                    rowsPerImage: compute.TEXTURES_W,
-                },
-                { width: compute.TEXTURES_W, height: compute.TEXTURES_W }
-            );
+            compute.init_textures();
+            compute.update_texture_bind_groups();
+            compute.reset_heightmap();
         });
 
     // parameters
@@ -178,5 +158,29 @@ export function setup_controls(compute: ErosionCompute) {
         .getElementById("erosion-deposition-button")!
         .addEventListener("mousedown", () => {
             compute.run_erosion_deposition();
+        });
+
+    document
+        .getElementById("resolution-select")!
+        .addEventListener("input", (e) => {
+            compute.next_resolution = Number(
+                (e.target as HTMLInputElement).value
+            );
+        });
+
+    document
+        .getElementById("height-scale-input")!
+        .addEventListener("input", (e) => {
+            compute.terrain_height_scale = Number(
+                (e.target as HTMLInputElement).value
+            );
+        });
+
+    document
+        .getElementById("width-scale-input")!
+        .addEventListener("input", (e) => {
+            compute.terrain_width_scale = Number(
+                (e.target as HTMLInputElement).value
+            );
         });
 }

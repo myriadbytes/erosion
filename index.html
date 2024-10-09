@@ -120,6 +120,25 @@
                 <button id="evaporation-button">evaporation</button>
                 <button id="full-step-button">full step</button>
             </fieldset>
+
+            <fieldset>
+                <legend>scale</legend>
+                <p>note : settings in this category require a reset</p>
+                <label for="resolution-select">resolution</label>
+                <select name="resolution" id="resolution-select">
+                    <option value="256">256</option>
+                    <option value="512">512</option>
+                    <option value="1024">1024</option>
+                </select>
+
+                <br>
+
+                <label for="height-scale-input">virtual terrain height</label>
+                <input type="number" id="height-scale-input" value="100" step="10">
+
+                <label for="width-scale-input">virtual terrain width</label>
+                <input type="number" id="width-scale-input" value="300" step="10">
+            </fieldset>
         </aside>
         <aside id="info-panel">
             <h1>WebGPU Hydraulic Erosion</h1>
@@ -132,6 +151,7 @@
 
             <p>todo:
                 <ul>
+                    <li>improve terrain scale handling</li>
                     <li>better simulation stability</li>
                     <li>support for higher resolution terrain</li>
                     <li>better visualization</li>
@@ -142,86 +162,3 @@
         <script type="module" src="/src/main.ts"></script>
     </body>
 </html>
-
-<!-- <h1>WebGPU Erosion Simulation</h1>
-<div>
-    <canvas width="800" height="600"></canvas>
-    <br />
-    <div>
-        <button id="water_increment_button">water increment</button>
-        <button id="outflow_flux_button">outflow flux</button>
-        <button id="water_velocity_button">water / velocity</button>
-        <button id="erosion_deposition_button">
-            erosion / deposition
-        </button>
-        <button id="transportation_button">transportation</button>
-        <br />
-        <button id="full_step_button">FULL STEP(S)</button>
-        <input type="number" value="1" id="steps_input" />
-        <br />
-        <fieldset>
-            <legend>visualization type :</legend>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="terrain"
-                    id="terrain"
-                    checked
-                />
-                <label for="terrain">terrain</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="flow-x"
-                    id="flow-x"
-                />
-                <label for="flow-x">flow x</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="flow-y"
-                    id="flow-y"
-                />
-                <label for="flow-y">flow y</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="velocity-x"
-                    id="velocity-x"
-                />
-                <label for="velocity-x">velocity x</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="velocity-y"
-                    id="velocity-y"
-                />
-                <label for="velocity-y">velocity y</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="sediment"
-                    id="sediment"
-                />
-                <label for="sediment">sediment</label>
-            </div>
-        </fieldset>
-        <fieldset>
-            <legend>Simulation Parameters :</legend>
-            <button id="start_stop_button">Start/Stop</button>
-            <button id="reset_button">Reset</button>
-        </fieldset>
-    </div>
-</div>
-<script type="module" src="/src/main.ts"></script> -->

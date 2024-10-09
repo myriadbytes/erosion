@@ -10,7 +10,8 @@ export class ErosionCompute {
     device: GPUDevice;
     running: boolean = true;
     // textures
-    TEXTURES_W = 256;
+    next_resolution: number;
+    RESOLUTION = 256;
     t1_read: GPUTexture;
     t1_write: GPUTexture;
     t2_read: GPUTexture;
@@ -32,6 +33,13 @@ export class ErosionCompute {
     erosion_deposition_bind_group: GPUBindGroup;
     transportation_bind_group: GPUBindGroup;
     evaporation_bind_group: GPUBindGroup;
+
+    water_increment_bind_group_layout: GPUBindGroupLayout;
+    outflow_flux_bind_group_layout: GPUBindGroupLayout;
+    water_velocity_bind_group_layout: GPUBindGroupLayout;
+    erosion_deposition_bind_group_layout: GPUBindGroupLayout;
+    transportation_bind_group_layout: GPUBindGroupLayout;
+    evaporation_bind_group_layout: GPUBindGroupLayout;
 
     // pipelines
     water_increment_pipeline: GPUComputePipeline;
@@ -56,19 +64,23 @@ export class ErosionCompute {
     ks_param_buffer: GPUBuffer;
     kd_param_buffer: GPUBuffer;
     evaporation_param_buffer: GPUBuffer;
-    height_scale: number = 100;
+    terrain_height_scale: number = 100;
+    terrain_width_scale: number = 300;
 
     constructor(device: GPUDevice) {
         this.device = device;
         this.init_textures();
         this.init_viz_and_params();
 
-        this.init_water_increment();
-        this.init_outflow_flux();
-        this.init_water_velocity();
-        this.init_erosion_deposition();
-        this.init_transportation();
-        this.init_evaporation();
+        this.init_water_increment_pipeline();
+        this.init_outflow_flux_pipeline();
+        this.init_water_velocity_pipeline();
+        this.init_erosion_deposition_pipeline();
+        this.init_transportation_pipeline();
+        this.init_evaporation_pipeline();
+
+        this.reset_heightmap();
+        this.update_texture_bind_groups();
     }
 
     init_textures() {
@@ -78,9 +90,15 @@ export class ErosionCompute {
          *  T3 HOLDS : ->V (velocity field)
          */
 
+        if (this.next_resolution) {
+            this.RESOLUTION = this.next_resolution;
+        }
+
+        if (this.t1_read) this.t1_read.destroy();
+
         this.t1_read = this.device.createTexture({
             label: "t1 read",
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            size: { width: this.RESOLUTION, height: this.RESOLUTION },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
@@ -89,7 +107,7 @@ export class ErosionCompute {
         });
         this.t1_write = this.device.createTexture({
             label: "t1 write",
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            size: { width: this.RESOLUTION, height: this.RESOLUTION },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
@@ -98,7 +116,7 @@ export class ErosionCompute {
         });
         this.t2_read = this.device.createTexture({
             label: "t2 read",
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            size: { width: this.RESOLUTION, height: this.RESOLUTION },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
@@ -107,7 +125,7 @@ export class ErosionCompute {
         });
         this.t2_write = this.device.createTexture({
             label: "t2 write",
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            size: { width: this.RESOLUTION, height: this.RESOLUTION },
             format: "rgba32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
@@ -116,7 +134,7 @@ export class ErosionCompute {
         });
         this.t3_read = this.device.createTexture({
             label: "t3 read",
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            size: { width: this.RESOLUTION, height: this.RESOLUTION },
             format: "rg32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
@@ -125,33 +143,31 @@ export class ErosionCompute {
         });
         this.t3_write = this.device.createTexture({
             label: "t3 write",
-            size: { width: this.TEXTURES_W, height: this.TEXTURES_W },
+            size: { width: this.RESOLUTION, height: this.RESOLUTION },
             format: "rg32float",
             usage:
                 GPUTextureUsage.STORAGE_BINDING |
                 GPUTextureUsage.TEXTURE_BINDING |
                 GPUTextureUsage.COPY_SRC,
         });
-
-        this.init_heightmap();
     }
 
-    init_heightmap() {
+    reset_heightmap() {
         /*
          *   POPULATE HEIGHT TEXTURE WITH PERLIN NOISE
          */
         const noise = new Perlin();
         const heightmap = new Float32Array(
-            this.TEXTURES_W * this.TEXTURES_W * 4
+            this.RESOLUTION * this.RESOLUTION * 4
         ).map((e, i, a) => {
             if (i % 4 == 0) {
-                let x = i / 4 / this.TEXTURES_W;
-                let y = (i / 4) % this.TEXTURES_W;
+                let x = i / 4 / this.RESOLUTION;
+                let y = (i / 4) % this.RESOLUTION;
                 return (
                     noise.perlin(
-                        (x / this.TEXTURES_W) * 6,
-                        (y / this.TEXTURES_W) * 6
-                    ) * this.height_scale
+                        (x / this.RESOLUTION) * 6,
+                        (y / this.RESOLUTION) * 6
+                    ) * this.terrain_height_scale
                 );
             }
             return 0;
@@ -159,8 +175,31 @@ export class ErosionCompute {
         this.device.queue.writeTexture(
             { texture: this.t1_read },
             heightmap,
-            { bytesPerRow: 4 * 4 * this.TEXTURES_W },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { bytesPerRow: 4 * 4 * this.RESOLUTION },
+            { width: this.RESOLUTION, height: this.RESOLUTION }
+        );
+
+        // clear the other textures
+        this.device.queue.writeTexture(
+            { texture: this.t2_read },
+            new Float32Array(this.RESOLUTION * this.RESOLUTION * 4),
+            {
+                offset: 0,
+                bytesPerRow: 4 * 4 * this.RESOLUTION,
+                rowsPerImage: this.RESOLUTION,
+            },
+            { width: this.RESOLUTION, height: this.RESOLUTION }
+        );
+
+        this.device.queue.writeTexture(
+            { texture: this.t3_read },
+            new Float32Array(this.RESOLUTION * this.RESOLUTION * 2),
+            {
+                offset: 0,
+                bytesPerRow: 4 * 2 * this.RESOLUTION,
+                rowsPerImage: this.RESOLUTION,
+            },
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
     }
 
@@ -193,31 +232,6 @@ export class ErosionCompute {
                     binding: 3,
                     visibility: GPUShaderStage.FRAGMENT,
                     buffer: {},
-                },
-            ],
-        });
-
-        this.view_bind_group = this.device.createBindGroup({
-            label: "visualization bind group",
-            layout: this.view_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.t1_read.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.t2_read.createView(),
-                },
-                {
-                    binding: 2,
-                    resource: this.t3_read.createView(),
-                },
-                {
-                    binding: 3,
-                    resource: {
-                        buffer: this.view_type_buffer,
-                    },
                 },
             ],
         });
@@ -355,8 +369,8 @@ export class ErosionCompute {
         });
     }
 
-    init_water_increment() {
-        let water_increment_bind_group_layout =
+    init_water_increment_pipeline() {
+        this.water_increment_bind_group_layout =
             this.device.createBindGroupLayout({
                 label: "Water Increment Bindgroup Layout",
                 entries: [
@@ -381,21 +395,6 @@ export class ErosionCompute {
                 ],
             });
 
-        this.water_increment_bind_group = this.device.createBindGroup({
-            label: "Water Increment Bind Group",
-            layout: water_increment_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.t1_read.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.t1_write.createView(),
-                },
-            ],
-        });
-
         this.water_increment_shader = this.device.createShaderModule({
             label: "Water Increment Shader",
             code: water_increment_shader_string,
@@ -403,7 +402,7 @@ export class ErosionCompute {
 
         let water_increment_pipeline_layout = this.device.createPipelineLayout({
             bindGroupLayouts: [
-                water_increment_bind_group_layout,
+                this.water_increment_bind_group_layout,
                 this.params_bind_group_layout,
             ],
         });
@@ -417,58 +416,41 @@ export class ErosionCompute {
         });
     }
 
-    init_outflow_flux() {
-        let outflow_flux_bind_group_layout = this.device.createBindGroupLayout({
-            label: "Outflow Flux Bindgroup Layout",
-            entries: [
-                // b, d in
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.COMPUTE,
-                    storageTexture: {
-                        access: "read-only",
-                        format: "rgba32float",
+    init_outflow_flux_pipeline() {
+        this.outflow_flux_bind_group_layout = this.device.createBindGroupLayout(
+            {
+                label: "Outflow Flux Bindgroup Layout",
+                entries: [
+                    // b, d in
+                    {
+                        binding: 0,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
                     },
-                },
-                // f in
-                {
-                    binding: 1,
-                    visibility: GPUShaderStage.COMPUTE,
-                    storageTexture: {
-                        access: "read-only",
-                        format: "rgba32float",
+                    // f in
+                    {
+                        binding: 1,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "read-only",
+                            format: "rgba32float",
+                        },
                     },
-                },
-                // f out
-                {
-                    binding: 2,
-                    visibility: GPUShaderStage.COMPUTE,
-                    storageTexture: {
-                        access: "write-only",
-                        format: "rgba32float",
+                    // f out
+                    {
+                        binding: 2,
+                        visibility: GPUShaderStage.COMPUTE,
+                        storageTexture: {
+                            access: "write-only",
+                            format: "rgba32float",
+                        },
                     },
-                },
-            ],
-        });
-
-        this.outflow_flux_bind_group = this.device.createBindGroup({
-            label: "Outflow Flux Bind Group",
-            layout: outflow_flux_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.t1_read.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.t2_read.createView(),
-                },
-                {
-                    binding: 2,
-                    resource: this.t2_write.createView(),
-                },
-            ],
-        });
+                ],
+            }
+        );
 
         this.outflow_flux_shader = this.device.createShaderModule({
             label: "Outflow Flux Shader",
@@ -477,7 +459,7 @@ export class ErosionCompute {
 
         let outflow_flux_pipeline_layout = this.device.createPipelineLayout({
             bindGroupLayouts: [
-                outflow_flux_bind_group_layout,
+                this.outflow_flux_bind_group_layout,
                 this.params_bind_group_layout,
             ],
         });
@@ -491,8 +473,8 @@ export class ErosionCompute {
         });
     }
 
-    init_water_velocity() {
-        let water_velocity_bind_group_layout =
+    init_water_velocity_pipeline() {
+        this.water_velocity_bind_group_layout =
             this.device.createBindGroupLayout({
                 label: "Water Velocity Bindgroup Layout",
                 entries: [
@@ -535,29 +517,6 @@ export class ErosionCompute {
                 ],
             });
 
-        this.water_velocity_bind_group = this.device.createBindGroup({
-            label: "Water Velocity Bind Group",
-            layout: water_velocity_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.t2_read.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.t1_read.createView(),
-                },
-                {
-                    binding: 2,
-                    resource: this.t1_write.createView(),
-                },
-                {
-                    binding: 3,
-                    resource: this.t3_write.createView(),
-                },
-            ],
-        });
-
         this.water_velocity_shader = this.device.createShaderModule({
             label: "Water Velocity Shader",
             code: water_velocity_shader_string,
@@ -565,7 +524,7 @@ export class ErosionCompute {
 
         let water_velocity_pipeline_layout = this.device.createPipelineLayout({
             bindGroupLayouts: [
-                water_velocity_bind_group_layout,
+                this.water_velocity_bind_group_layout,
                 this.params_bind_group_layout,
             ],
         });
@@ -579,8 +538,8 @@ export class ErosionCompute {
         });
     }
 
-    init_erosion_deposition() {
-        let erosion_deposition_bind_group_layout =
+    init_erosion_deposition_pipeline() {
+        this.erosion_deposition_bind_group_layout =
             this.device.createBindGroupLayout({
                 label: "Erosion Deposition Bindgroup Layout",
                 entries: [
@@ -614,25 +573,6 @@ export class ErosionCompute {
                 ],
             });
 
-        this.erosion_deposition_bind_group = this.device.createBindGroup({
-            label: "Erosion Deposition Bind Group",
-            layout: erosion_deposition_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.t1_read.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.t3_read.createView(),
-                },
-                {
-                    binding: 2,
-                    resource: this.t1_write.createView(),
-                },
-            ],
-        });
-
         this.erosion_deposition_shader = this.device.createShaderModule({
             label: "Erosion Deposition Shader",
             code: erosion_deposition_shader_string,
@@ -641,7 +581,7 @@ export class ErosionCompute {
         let erosion_deposition_pipeline_layout =
             this.device.createPipelineLayout({
                 bindGroupLayouts: [
-                    erosion_deposition_bind_group_layout,
+                    this.erosion_deposition_bind_group_layout,
                     this.params_bind_group_layout,
                 ],
             });
@@ -655,8 +595,8 @@ export class ErosionCompute {
         });
     }
 
-    init_transportation() {
-        let transportation_bind_group_layout =
+    init_transportation_pipeline() {
+        this.transportation_bind_group_layout =
             this.device.createBindGroupLayout({
                 label: "Transportation Bindgroup Layout",
                 entries: [
@@ -690,25 +630,6 @@ export class ErosionCompute {
                 ],
             });
 
-        this.transportation_bind_group = this.device.createBindGroup({
-            label: "Transportation Bind Group",
-            layout: transportation_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.t1_read.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.t3_read.createView(),
-                },
-                {
-                    binding: 2,
-                    resource: this.t1_write.createView(),
-                },
-            ],
-        });
-
         this.transportation_shader = this.device.createShaderModule({
             label: "Transportation Shader",
             code: transportation_shader_string,
@@ -716,7 +637,7 @@ export class ErosionCompute {
 
         let transportation_pipeline_layout = this.device.createPipelineLayout({
             bindGroupLayouts: [
-                transportation_bind_group_layout,
+                this.transportation_bind_group_layout,
                 this.params_bind_group_layout,
             ],
         });
@@ -730,8 +651,8 @@ export class ErosionCompute {
         });
     }
 
-    init_evaporation() {
-        let evaporation_bind_group_layout = this.device.createBindGroupLayout({
+    init_evaporation_pipeline() {
+        this.evaporation_bind_group_layout = this.device.createBindGroupLayout({
             label: "Evaporation Bindgroup Layout",
             entries: [
                 // d in
@@ -755,21 +676,6 @@ export class ErosionCompute {
             ],
         });
 
-        this.evaporation_bind_group = this.device.createBindGroup({
-            label: "Evaporation Bind Group",
-            layout: evaporation_bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: this.t1_read.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: this.t1_write.createView(),
-                },
-            ],
-        });
-
         this.evaporation_shader = this.device.createShaderModule({
             label: "Evaporation Shader",
             code: evaporation_shader_string,
@@ -777,7 +683,7 @@ export class ErosionCompute {
 
         let evaporation_pipeline_layout = this.device.createPipelineLayout({
             bindGroupLayouts: [
-                evaporation_bind_group_layout,
+                this.evaporation_bind_group_layout,
                 this.params_bind_group_layout,
             ],
         });
@@ -791,18 +697,155 @@ export class ErosionCompute {
         });
     }
 
+    update_texture_bind_groups() {
+        this.water_increment_bind_group = this.device.createBindGroup({
+            label: "Water Increment Bind Group",
+            layout: this.water_increment_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t1_write.createView(),
+                },
+            ],
+        });
+
+        this.outflow_flux_bind_group = this.device.createBindGroup({
+            label: "Outflow Flux Bind Group",
+            layout: this.outflow_flux_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t2_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t2_write.createView(),
+                },
+            ],
+        });
+
+        this.water_velocity_bind_group = this.device.createBindGroup({
+            label: "Water Velocity Bind Group",
+            layout: this.water_velocity_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t2_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t1_write.createView(),
+                },
+                {
+                    binding: 3,
+                    resource: this.t3_write.createView(),
+                },
+            ],
+        });
+
+        this.erosion_deposition_bind_group = this.device.createBindGroup({
+            label: "Erosion Deposition Bind Group",
+            layout: this.erosion_deposition_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t3_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t1_write.createView(),
+                },
+            ],
+        });
+
+        this.transportation_bind_group = this.device.createBindGroup({
+            label: "Transportation Bind Group",
+            layout: this.transportation_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t3_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t1_write.createView(),
+                },
+            ],
+        });
+
+        this.evaporation_bind_group = this.device.createBindGroup({
+            label: "Evaporation Bind Group",
+            layout: this.evaporation_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t1_write.createView(),
+                },
+            ],
+        });
+
+        this.view_bind_group = this.device.createBindGroup({
+            label: "visualization bind group",
+            layout: this.view_bind_group_layout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.t1_read.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.t2_read.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.t3_read.createView(),
+                },
+                {
+                    binding: 3,
+                    resource: {
+                        buffer: this.view_type_buffer,
+                    },
+                },
+            ],
+        });
+    }
+
     run_water_increment() {
         const encoder = this.device.createCommandEncoder({});
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.water_increment_pipeline);
         pass.setBindGroup(0, this.water_increment_bind_group);
         pass.setBindGroup(1, this.params_bind_group);
-        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.dispatchWorkgroups(this.RESOLUTION / 16, this.RESOLUTION / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
             { texture: this.t1_read },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
@@ -814,12 +857,12 @@ export class ErosionCompute {
         pass.setPipeline(this.outflow_flux_pipeline);
         pass.setBindGroup(0, this.outflow_flux_bind_group);
         pass.setBindGroup(1, this.params_bind_group);
-        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.dispatchWorkgroups(this.RESOLUTION / 16, this.RESOLUTION / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t2_write },
             { texture: this.t2_read },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
@@ -831,17 +874,17 @@ export class ErosionCompute {
         pass.setPipeline(this.water_velocity_pipeline);
         pass.setBindGroup(0, this.water_velocity_bind_group);
         pass.setBindGroup(1, this.params_bind_group);
-        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.dispatchWorkgroups(this.RESOLUTION / 16, this.RESOLUTION / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
             { texture: this.t1_read },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
         encoder.copyTextureToTexture(
             { texture: this.t3_write },
             { texture: this.t3_read },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
@@ -853,12 +896,12 @@ export class ErosionCompute {
         pass.setPipeline(this.erosion_deposition_pipeline);
         pass.setBindGroup(0, this.erosion_deposition_bind_group);
         pass.setBindGroup(1, this.params_bind_group);
-        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.dispatchWorkgroups(this.RESOLUTION / 16, this.RESOLUTION / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
             { texture: this.t1_read },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
@@ -870,12 +913,12 @@ export class ErosionCompute {
         pass.setPipeline(this.transportation_pipeline);
         pass.setBindGroup(0, this.transportation_bind_group);
         pass.setBindGroup(1, this.params_bind_group);
-        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.dispatchWorkgroups(this.RESOLUTION / 16, this.RESOLUTION / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
             { texture: this.t1_read },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
@@ -887,12 +930,12 @@ export class ErosionCompute {
         pass.setPipeline(this.evaporation_pipeline);
         pass.setBindGroup(0, this.evaporation_bind_group);
         pass.setBindGroup(1, this.params_bind_group);
-        pass.dispatchWorkgroups(this.TEXTURES_W / 16, this.TEXTURES_W / 16);
+        pass.dispatchWorkgroups(this.RESOLUTION / 16, this.RESOLUTION / 16);
         pass.end();
         encoder.copyTextureToTexture(
             { texture: this.t1_write },
             { texture: this.t1_read },
-            { width: this.TEXTURES_W, height: this.TEXTURES_W }
+            { width: this.RESOLUTION, height: this.RESOLUTION }
         );
         const command_buffer = encoder.finish();
         this.device.queue.submit([command_buffer]);
