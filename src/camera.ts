@@ -17,7 +17,7 @@ export class OrbitCamera {
         const canvas = document.querySelector("canvas")!;
 
         this.device = device;
-        this.pos = vec3.fromValues(0.0, 1.6, 0.5);
+        this.pos = vec3.fromValues(0.6, 1.2, 0.9);
         this.target = vec3.fromValues(0.0, 0.0, 0.0);
 
         this.setup_buffers(canvas.width, canvas.height);
@@ -116,7 +116,19 @@ export class OrbitCamera {
         mat4.rotate(rotation_m, rotation_m, -delta_y * 0.01, axis);
 
         // tranform the position of the camera
-        vec3.transformMat4(this.pos, this.pos, rotation_m);
+        let new_pos = vec3.create();
+        vec3.transformMat4(new_pos, this.pos, rotation_m);
+
+        // check if we're not too close to the top or bottom already
+        let new_eye_v = vec3.create();
+        vec3.sub(new_eye_v, this.target, new_pos);
+        vec3.normalize(new_eye_v, new_eye_v);
+        let aligment = vec3.dot(new_eye_v, [0.0, -1.0, 0.0]);
+        if (aligment > 0.95 || aligment < -0.95) {
+            return;
+        }
+
+        this.pos = new_pos;
         this.update_view_matrix();
     }
 
