@@ -47,7 +47,7 @@ var<uniform> K_D: f32;
     // calculate the capacity
 
     let v : vec2f = textureLoad(v_read, id.xy).xy;
-    let c : f32 = K_C * sin_a * length(v);
+    let c : f32 = K_C * clamp(sin_a, 0.1, 1.0) * length(v);
     let s : f32 = bds[2];
 
     var b_change : f32 = 0;

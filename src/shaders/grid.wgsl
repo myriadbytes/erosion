@@ -59,12 +59,10 @@ fn vertexMain(in: Vertex) -> VertexOut {
 
 @fragment
 fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
-    const terrain_color_dark = vec3f(88./255., 59./255., 35./255.);
-    const terrain_color_light = vec3f(177./255., 127./255., 87./255.);
-    const sediment_color = vec3f(254./255., 215./255., 102./255.);
+    const terrain_color = vec3f(121./255., 134./255., 69./255.);
+    const sediment_color = vec3f(254./255., 250./255., 224./255.);
   
     let height = textureSample(terrain_texture, viz_sampler, in.uv)[0] / 100;
-    let terrain_diffuse = mix(terrain_color_dark, terrain_color_light, height);
 
     const water_color = vec3f(82./255., 139./255., 255./255.);
     let water = textureSample(terrain_texture, viz_sampler, in.uv)[1];
@@ -83,38 +81,41 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
         //return(vec4f((in.normal + 1) / 2, 1.0));
 
-        let light = normalize(vec3f(0, 1, 1));
-        let lambert = dot(in.normal, light);
-        return vec4f(lambert, lambert, lambert, 1.0);
+        let light_dir = normalize(vec3f(1, 1, 0));
+        let lambert = dot(in.normal, light_dir);
+
+        let ambiant_color = vec3f(0.1, 0.1, 0.1);
+
+        return vec4f(mix(terrain_color, sediment_color, clamp(sediment, 0.0, 1.0)) * lambert + ambiant_color, 1.0);
     }
 
     // DEBUG FLUX
     if(visualization_type == 1){
-        return vec4f(flow[0] * 1000, 0.0, flow[1] * 1000, 1.0);
+        return vec4f(flow[0] / 10, 0.0, flow[1] / 10, 1.0);
     }
     if(visualization_type == 2){
-        return vec4f(flow[2] * 1000, 0.0, flow[3] * 1000, 1.0);
+        return vec4f(flow[2] / 10, 0.0, flow[3] / 10, 1.0);
     }
 
     // DEBUG VELOCITY FIELD
     if(visualization_type == 3){
         if(v.x > 0) {
-            return vec4f(v.x * 5, 0.0, 0.0, 1.0);
+            return vec4f(v.x, 0.0, 0.0, 1.0);
         } else {
-            return vec4f(0.0, 0.0, abs(v.x) * 5, 1.0);
+            return vec4f(0.0, 0.0, abs(v.x), 1.0);
         }
     }
     if(visualization_type == 4){
         if(v.y > 0) {
-            return vec4f(v.y * 5, 0.0, 0.0, 1.0);
+            return vec4f(v.y, 0.0, 0.0, 1.0);
         } else {
-            return vec4f(0.0, 0.0, abs(v.y) * 5, 1.0);
+            return vec4f(0.0, 0.0, abs(v.y), 1.0);
         }
     }
 
     // DEBUG SEDIMENTS
     if(visualization_type == 5){
-        return vec4f(sediment * 30, sediment * 30, sediment * 30, 1.0);
+        return vec4f(sediment , sediment, sediment , 1.0);
     }
 
     return vec4f(1.0, 0.0, 0.0, 1.0);
