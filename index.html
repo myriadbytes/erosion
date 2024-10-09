@@ -7,14 +7,10 @@
         <title>WebGPU Erosion</title>
     </head>
     <body>
-        <header>
-            <h1>WebGPU Erosion Simulation</h1>
-        </header>
         <main id="viewport">
             <canvas id="viewport-canvas" width="800" height="600"></canvas>
         </main>
         <aside id="control-panel">
-            <p>bla bla control panel</p>
             <fieldset>
                 <legend>visualization :</legend>
                 <div>
@@ -125,8 +121,23 @@
                 <button id="full-step-button">full step</button>
             </fieldset>
         </aside>
-        <aside id="info panel">
-            <p>bla bla info panel</p>
+        <aside id="info-panel">
+            <h1>WebGPU Hydraulic Erosion</h1>
+            <p>
+                This simulation is based
+                <a href="https://inria.hal.science/inria-00402079/document">
+                    on a paper by Xing Mei, Philippe Decaudin and Bao-Gang Hu </a
+                >.
+            </p>
+
+            <p>todo:
+                <ul>
+                    <li>better simulation stability on crests</li>
+                    <li>support for higher resolution terrain</li>
+                    <li>better visualization</li>
+                    <li>dynamic resizing of the swapchain and canvas</li>
+                </ul>
+            </p>
         </aside>
         <script type="module" src="/src/main.ts"></script>
     </body>

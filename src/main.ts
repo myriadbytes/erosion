@@ -9,12 +9,17 @@ import { Perlin } from "./noise";
 import { ErosionCompute } from "./compute";
 import { setup_controls } from "./ui";
 
+let viewport = document.querySelector("#viewport") as HTMLElement;
+let canvas = document.querySelector("canvas");
+canvas!.width = viewport.clientWidth;
+canvas!.height = viewport.clientHeight;
+
 const { device, context, canvasFormat, depthTexture } = await InitWebGPU();
 
 const camera = new OrbitCamera(device);
 const grid_mesh = new GridMesh(
     device,
-    1024,
+    512,
     camera.view_matrix_buffer,
     camera.proj_matrix_buffer
 );
