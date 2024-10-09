@@ -15,8 +15,8 @@ var<uniform> timestep: f32;
 
     let v : vec2f = textureLoad(v_read, id.xy).xy;
     
-    let x : u32 = clamp(u32(f32(id.x) - (v.x * timestep)), 0, dim.x - 1);
-    let y : u32 = clamp(u32(f32(id.y) - (v.y * timestep)), 0, dim.y - 1);
+    let x : u32 = clamp(u32(round(f32(id.x) - (v.x * timestep))), 0, dim.x - 1);
+    let y : u32 = clamp(u32(round(f32(id.y) - (v.y * timestep))), 0, dim.y - 1);
 
     let s : f32 = textureLoad(bds_read, vec2u(x, y))[2];
 

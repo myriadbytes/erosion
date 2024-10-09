@@ -17,7 +17,7 @@ export class OrbitCamera {
         const canvas = document.querySelector("canvas")!;
 
         this.device = device;
-        this.pos = vec3.fromValues(1.0, 1.0, 3.0);
+        this.pos = vec3.fromValues(0.0, 1.6, 0.5);
         this.target = vec3.fromValues(0.0, 0.0, 0.0);
 
         this.setup_buffers(canvas.width, canvas.height);

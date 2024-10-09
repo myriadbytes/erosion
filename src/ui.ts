@@ -51,6 +51,28 @@ export function setup_controls(compute: ErosionCompute) {
         .getElementById("reset-button")!
         .addEventListener("mousedown", () => {
             compute.init_heightmap();
+
+            compute.device.queue.writeTexture(
+                { texture: compute.t2_read },
+                new Float32Array(compute.TEXTURES_W * compute.TEXTURES_W * 4),
+                {
+                    offset: 0,
+                    bytesPerRow: 4 * 4 * compute.TEXTURES_W,
+                    rowsPerImage: compute.TEXTURES_W,
+                },
+                { width: compute.TEXTURES_W, height: compute.TEXTURES_W }
+            );
+
+            compute.device.queue.writeTexture(
+                { texture: compute.t3_read },
+                new Float32Array(compute.TEXTURES_W * compute.TEXTURES_W * 2),
+                {
+                    offset: 0,
+                    bytesPerRow: 4 * 2 * compute.TEXTURES_W,
+                    rowsPerImage: compute.TEXTURES_W,
+                },
+                { width: compute.TEXTURES_W, height: compute.TEXTURES_W }
+            );
         });
 
     // parameters
@@ -132,4 +154,29 @@ export function setup_controls(compute: ErosionCompute) {
         compute.evaporation_param_buffer,
         Number(evaporation_input.value)
     );
+
+    // steps
+    document
+        .getElementById("water-increment-button")!
+        .addEventListener("mousedown", () => {
+            compute.run_water_increment();
+        });
+
+    document
+        .getElementById("outflow-flux-button")!
+        .addEventListener("mousedown", () => {
+            compute.run_outflow_flux();
+        });
+
+    document
+        .getElementById("water-velocity-button")!
+        .addEventListener("mousedown", () => {
+            compute.run_water_velocity();
+        });
+
+    document
+        .getElementById("erosion-deposition-button")!
+        .addEventListener("mousedown", () => {
+            compute.run_erosion_deposition();
+        });
 }

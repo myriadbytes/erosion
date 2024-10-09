@@ -55,7 +55,7 @@ var<uniform> timestep: f32;
     textureStore(bds_write, id.xy, bds_new);
 
     // STEP 2 : calculate the velocity field
-    let water_amount_u : f32 = (f_in_l - f_out[0] + f_out[1] - f_in_l) / 2.0;
+    let water_amount_u : f32 = (f_in_l - f_out[0] + f_out[1] - f_in_r) / 2.0;
     let water_amount_v : f32 = (f_in_b - f_out[3] + f_out[2] - f_in_t) / 2.0;
 
     let average_water : f32 = (bds[1] + bds_new[1]) / 2.0;

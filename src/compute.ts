@@ -56,6 +56,7 @@ export class ErosionCompute {
     ks_param_buffer: GPUBuffer;
     kd_param_buffer: GPUBuffer;
     evaporation_param_buffer: GPUBuffer;
+    height_scale: number = 100;
 
     constructor(device: GPUDevice) {
         this.device = device;
@@ -146,9 +147,11 @@ export class ErosionCompute {
             if (i % 4 == 0) {
                 let x = i / 4 / this.TEXTURES_W;
                 let y = (i / 4) % this.TEXTURES_W;
-                return noise.perlin(
-                    (x / this.TEXTURES_W) * 6,
-                    (y / this.TEXTURES_W) * 6
+                return (
+                    noise.perlin(
+                        (x / this.TEXTURES_W) * 6,
+                        (y / this.TEXTURES_W) * 6
+                    ) * this.height_scale
                 );
             }
             return 0;

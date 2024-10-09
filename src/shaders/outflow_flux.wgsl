@@ -50,10 +50,10 @@ var<uniform> g: f32;
     // outgoing flux
     let f : vec4f = textureLoad(f_read, id.xy);
 
-    let f_l = max(0, f[0] + timestep * (g * h_l));
-    let f_r = max(0, f[1] + timestep * (g * h_r));
-    let f_t = max(0, f[2] + timestep * (g * h_t));
-    let f_b = max(0, f[3] + timestep * (g * h_b));
+    let f_l = max(0, f[0] + timestep * 10 * (g * h_l));
+    let f_r = max(0, f[1] + timestep * 10 * (g * h_r));
+    let f_t = max(0, f[2] + timestep * 10 * (g * h_t));
+    let f_b = max(0, f[3] + timestep * 10 * (g * h_b));
 
     let f_new = f + vec4f(f_l, f_r, f_t, f_b);
 

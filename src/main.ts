@@ -14,7 +14,7 @@ const { device, context, canvasFormat, depthTexture } = await InitWebGPU();
 const camera = new OrbitCamera(device);
 const grid_mesh = new GridMesh(
     device,
-    500,
+    1024,
     camera.view_matrix_buffer,
     camera.proj_matrix_buffer
 );

@@ -75,41 +75,54 @@
             </fieldset>
             <fieldset>
                 <legend>controls :</legend>
-                <button id="start-stop-button">Start/Stop</button>
-                <button id="reset-button">Reset</button>
+                <button id="start-stop-button">stop/resume</button>
+                <button id="reset-button">reset</button>
             </fieldset>
             <fieldset>
                 <legend>parameters :</legend>
                 <label for="timestep-input">timestep</label>
-                <input type="number" id="timestep-input" value="2" step="1" />
+                <input type="number" id="timestep-input" value="1" step="1" />
 
                 <label for="rainfall-input">rainfall</label>
                 <input
                     type="number"
                     id="rainfall-input"
-                    value="0.00005"
-                    step="0.0001"
+                    value="0.1"
+                    step="0.01"
                 />
 
                 <label for="g-input">gravity</label>
                 <input type="number" id="g-input" value="1.0" step="0.1" />
 
                 <label for="kc-input">sediment capacity</label>
-                <input type="number" id="kc-input" value="0.2" step="0.1" />
+                <input type="number" id="kc-input" value="0.5" step="0.1" />
 
                 <label for="ks-input">sediment dissolving</label>
-                <input type="number" id="ks-input" value="0.01" step="0.01" />
+                <input type="number" id="ks-input" value="0.1" step="0.01" />
 
                 <label for="kd-input">sediment deposition</label>
-                <input type="number" id="kd-input" value="0.01" step="0.01" />
+                <input type="number" id="kd-input" value="0.1" step="0.01" />
 
                 <label for="evaporation-input">evaporation</label>
                 <input
                     type="number"
                     id="evaporation-input"
-                    value="0.01"
+                    value="0.05"
                     step="0.01"
                 />
+            </fieldset>
+
+            <fieldset>
+                <legend>individual steps</legend>
+                <button id="water-increment-button">water increment</button>
+                <button id="outflow-flux-button">outflow flux</button>
+                <button id="water-velocity-button">water / velocity</button>
+                <button id="erosion-deposition-button">
+                    erosion / deposition
+                </button>
+                <button id="transportation-button">transportation</button>
+                <button id="evaporation-button">evaporation</button>
+                <button id="full-step-button">full step</button>
             </fieldset>
         </aside>
         <aside id="info panel">
