@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>WebGPU Erosion</title>
+      <script type="module" crossorigin src="/erosion/assets/index-BGdLzSWT.js"></script>
+      <link rel="stylesheet" crossorigin href="/erosion/assets/index-38Z64G2q.css">
+    </head>
+    <body>
+        <main id="viewport">
+            <canvas id="viewport-canvas" width="800" height="600"></canvas>
+        </main>
+        <aside id="control-panel">
+            <fieldset>
+                <legend>visualization :</legend>
+                <div>
+                    <input
+                        type="radio"
+                        name="visualization"
+                        value="terrain"
+                        id="terrain"
+                        checked
+                    />
+                    <label for="terrain">terrain</label>
+                </div>
+                <div>
+                    <input
+                        type="radio"
+                        name="visualization"
+                        value="flow-x"
+                        id="flow-x"
+                    />
+                    <label for="flow-x">flow x</label>
+                </div>
+                <div>
+                    <input
+                        type="radio"
+                        name="visualization"
+                        value="flow-y"
+                        id="flow-y"
+                    />
+                    <label for="flow-y">flow y</label>
+                </div>
+                <div>
+                    <input
+                        type="radio"
+                        name="visualization"
+                        value="velocity-x"
+                        id="velocity-x"
+                    />
+                    <label for="velocity-x">velocity x</label>
+                </div>
+                <div>
+                    <input
+                        type="radio"
+                        name="visualization"
+                        value="velocity-y"
+                        id="velocity-y"
+                    />
+                    <label for="velocity-y">velocity y</label>
+                </div>
+                <div>
+                    <input
+                        type="radio"
+                        name="visualization"
+                        value="sediment"
+                        id="sediment"
+                    />
+                    <label for="sediment">sediment</label>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>controls :</legend>
+                <button id="start-stop-button">stop/resume</button>
+                <button id="reset-button">reset</button>
+            </fieldset>
+            <fieldset>
+                <legend>parameters :</legend>
+                <label hidden for="timestep-input">timestep</label>
+                <input hidden type="number" id="timestep-input" value="1" step="1" />
+
+                <label for="rainfall-input">rainfall</label>
+                <input
+                    type="number"
+                    id="rainfall-input"
+                    value="0.1"
+                    step="0.01"
+                />
+
+                <label hidden   for="g-input">gravity</label>
+                <input hidden   type="number" id="g-input" value="1.0" step="0.1" />
+
+                <label for="kc-input">sediment capacity</label>
+                <input type="number" id="kc-input" value="0.5" step="0.1" />
+
+                <label for="ks-input">sediment dissolving</label>
+                <input type="number" id="ks-input" value="0.1" step="0.01" />
+
+                <label for="kd-input">sediment deposition</label>
+                <input type="number" id="kd-input" value="0.1" step="0.01" />
+
+                <label for="evaporation-input">evaporation</label>
+                <input
+                    type="number"
+                    id="evaporation-input"
+                    value="0.05"
+                    step="0.01"
+                />
+            </fieldset>
+
+            <fieldset>
+                <legend>individual steps</legend>
+                <button id="water-increment-button">water increment</button>
+                <button id="outflow-flux-button">outflow flux</button>
+                <button id="water-velocity-button">water / velocity</button>
+                <button id="erosion-deposition-button">
+                    erosion / deposition
+                </button>
+                <button id="transportation-button">transportation</button>
+                <button id="evaporation-button">evaporation</button>
+                <button id="full-step-button">full step</button>
+            </fieldset>
+        </aside>
+        <aside id="info-panel">
+            <h1>WebGPU Hydraulic Erosion</h1>
+            <p>
+                This simulation is based
+                <a href="https://inria.hal.science/inria-00402079/document">
+                    on a paper by Xing Mei, Philippe Decaudin and Bao-Gang Hu </a
+                >.
+            </p>
+
+            <p>todo:
+                <ul>
+                    <li>improve terrain scale handling</li>
+                    <li>better simulation stability</li>
+                    <li>support for higher resolution terrain</li>
+                    <li>better visualization</li>
+                    <li>dynamic canvas resizing</li>
+                </ul>
+            </p>
+        </aside>
+    </body>
+</html>
+
+<!-- <h1>WebGPU Erosion Simulation</h1>
+<div>
+    <canvas width="800" height="600"></canvas>
+    <br />
+    <div>
+        <button id="water_increment_button">water increment</button>
+        <button id="outflow_flux_button">outflow flux</button>
+        <button id="water_velocity_button">water / velocity</button>
+        <button id="erosion_deposition_button">
+            erosion / deposition
+        </button>
+        <button id="transportation_button">transportation</button>
+        <br />
+        <button id="full_step_button">FULL STEP(S)</button>
+        <input type="number" value="1" id="steps_input" />
+        <br />
+        <fieldset>
+            <legend>visualization type :</legend>
+            <div>
+                <input
+                    type="radio"
+                    name="visualization"
+                    value="terrain"
+                    id="terrain"
+                    checked
+                />
+                <label for="terrain">terrain</label>
+            </div>
+            <div>
+                <input
+                    type="radio"
+                    name="visualization"
+                    value="flow-x"
+                    id="flow-x"
+                />
+                <label for="flow-x">flow x</label>
+            </div>
+            <div>
+                <input
+                    type="radio"
+                    name="visualization"
+                    value="flow-y"
+                    id="flow-y"
+                />
+                <label for="flow-y">flow y</label>
+            </div>
+            <div>
+                <input
+                    type="radio"
+                    name="visualization"
+                    value="velocity-x"
+                    id="velocity-x"
+                />
+                <label for="velocity-x">velocity x</label>
+            </div>
+            <div>
+                <input
+                    type="radio"
+                    name="visualization"
+                    value="velocity-y"
+                    id="velocity-y"
+                />
+                <label for="velocity-y">velocity y</label>
+            </div>
+            <div>
+                <input
+                    type="radio"
+                    name="visualization"
+                    value="sediment"
+                    id="sediment"
+                />
+                <label for="sediment">sediment</label>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>Simulation Parameters :</legend>
+            <button id="start_stop_button">Start/Stop</button>
+            <button id="reset_button">Reset</button>
+        </fieldset>
+    </div>
+</div>
+<script type="module" src="/src/main.ts"></script> -->
