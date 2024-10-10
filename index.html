@@ -4,8 +4,8 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>WebGPU Erosion</title>
-      <script type="module" crossorigin src="/erosion/assets/index-BGdLzSWT.js"></script>
-      <link rel="stylesheet" crossorigin href="/erosion/assets/index-38Z64G2q.css">
+      <script type="module" crossorigin src="/erosion/assets/index-CDU5BWCc.js"></script>
+      <link rel="stylesheet" crossorigin href="/erosion/assets/index-CrGeRY9Y.css">
     </head>
     <body>
         <main id="viewport">
@@ -24,7 +24,7 @@
                     />
                     <label for="terrain">terrain</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -33,7 +33,7 @@
                     />
                     <label for="flow-x">flow x</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -42,7 +42,7 @@
                     />
                     <label for="flow-y">flow y</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -51,7 +51,7 @@
                     />
                     <label for="velocity-x">velocity x</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -78,7 +78,13 @@
             <fieldset>
                 <legend>parameters :</legend>
                 <label hidden for="timestep-input">timestep</label>
-                <input hidden type="number" id="timestep-input" value="1" step="1" />
+                <input
+                    hidden
+                    type="number"
+                    id="timestep-input"
+                    value="1"
+                    step="0.1"
+                />
 
                 <label for="rainfall-input">rainfall</label>
                 <input
@@ -88,11 +94,17 @@
                     step="0.01"
                 />
 
-                <label hidden   for="g-input">gravity</label>
-                <input hidden   type="number" id="g-input" value="1.0" step="0.1" />
+                <label hidden for="g-input">gravity</label>
+                <input
+                    hidden
+                    type="number"
+                    id="g-input"
+                    value="1.0"
+                    step="0.1"
+                />
 
                 <label for="kc-input">sediment capacity</label>
-                <input type="number" id="kc-input" value="0.5" step="0.1" />
+                <input type="number" id="kc-input" value="0.8" step="0.1" />
 
                 <label for="ks-input">sediment dissolving</label>
                 <input type="number" id="ks-input" value="0.1" step="0.01" />
@@ -109,7 +121,7 @@
                 />
             </fieldset>
 
-            <fieldset>
+            <fieldset hidden>
                 <legend>individual steps</legend>
                 <button id="water-increment-button">water increment</button>
                 <button id="outflow-flux-button">outflow flux</button>
@@ -121,6 +133,36 @@
                 <button id="evaporation-button">evaporation</button>
                 <button id="full-step-button">full step</button>
             </fieldset>
+
+            <fieldset id="scale-fieldset">
+                <legend>scale</legend>
+                <p>note : settings in this category require a reset</p>
+
+                <div>
+                    <label for="height-scale-input"
+                        >virtual terrain height</label
+                    >
+                    <input
+                        type="number"
+                        id="height-scale-input"
+                        value="200"
+                        step="10"
+                    />
+                    <p>unit is m</p>
+                </div>
+
+                <div>
+                    <label for="resolution-select"
+                        >virtual terrain resolution</label
+                    >
+                    <select name="resolution" id="resolution-select">
+                        <option value="256">256</option>
+                        <option value="512">512</option>
+                        <option value="1024" selected>1024</option>
+                    </select>
+                    <p>1 pixel = 1m²</p>
+                </div>
+            </fieldset>
         </aside>
         <aside id="info-panel">
             <h1>WebGPU Hydraulic Erosion</h1>
@@ -130,99 +172,6 @@
                     on a paper by Xing Mei, Philippe Decaudin and Bao-Gang Hu </a
                 >.
             </p>
-
-            <p>todo:
-                <ul>
-                    <li>improve terrain scale handling</li>
-                    <li>better simulation stability</li>
-                    <li>support for higher resolution terrain</li>
-                    <li>better visualization</li>
-                    <li>dynamic canvas resizing</li>
-                </ul>
-            </p>
         </aside>
     </body>
 </html>
-
-<!-- <h1>WebGPU Erosion Simulation</h1>
-<div>
-    <canvas width="800" height="600"></canvas>
-    <br />
-    <div>
-        <button id="water_increment_button">water increment</button>
-        <button id="outflow_flux_button">outflow flux</button>
-        <button id="water_velocity_button">water / velocity</button>
-        <button id="erosion_deposition_button">
-            erosion / deposition
-        </button>
-        <button id="transportation_button">transportation</button>
-        <br />
-        <button id="full_step_button">FULL STEP(S)</button>
-        <input type="number" value="1" id="steps_input" />
-        <br />
-        <fieldset>
-            <legend>visualization type :</legend>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="terrain"
-                    id="terrain"
-                    checked
-                />
-                <label for="terrain">terrain</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="flow-x"
-                    id="flow-x"
-                />
-                <label for="flow-x">flow x</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="flow-y"
-                    id="flow-y"
-                />
-                <label for="flow-y">flow y</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="velocity-x"
-                    id="velocity-x"
-                />
-                <label for="velocity-x">velocity x</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="velocity-y"
-                    id="velocity-y"
-                />
-                <label for="velocity-y">velocity y</label>
-            </div>
-            <div>
-                <input
-                    type="radio"
-                    name="visualization"
-                    value="sediment"
-                    id="sediment"
-                />
-                <label for="sediment">sediment</label>
-            </div>
-        </fieldset>
-        <fieldset>
-            <legend>Simulation Parameters :</legend>
-            <button id="start_stop_button">Start/Stop</button>
-            <button id="reset_button">Reset</button>
-        </fieldset>
-    </div>
-</div>
-<script type="module" src="/src/main.ts"></script> -->
