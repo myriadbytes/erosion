@@ -171,15 +171,7 @@ export function setup_controls(compute: ErosionCompute) {
     document
         .getElementById("height-scale-input")!
         .addEventListener("input", (e) => {
-            compute.terrain_height_scale = Number(
-                (e.target as HTMLInputElement).value
-            );
-        });
-
-    document
-        .getElementById("width-scale-input")!
-        .addEventListener("input", (e) => {
-            compute.terrain_width_scale = Number(
+            compute.terrain_height = Number(
                 (e.target as HTMLInputElement).value
             );
         });

@@ -23,7 +23,7 @@
                     />
                     <label for="terrain">terrain</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -32,7 +32,7 @@
                     />
                     <label for="flow-x">flow x</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -41,7 +41,7 @@
                     />
                     <label for="flow-y">flow y</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -50,7 +50,7 @@
                     />
                     <label for="velocity-x">velocity x</label>
                 </div>
-                <div>
+                <div hidden>
                     <input
                         type="radio"
                         name="visualization"
@@ -77,7 +77,13 @@
             <fieldset>
                 <legend>parameters :</legend>
                 <label hidden for="timestep-input">timestep</label>
-                <input hidden type="number" id="timestep-input" value="1" step="1" />
+                <input
+                    hidden
+                    type="number"
+                    id="timestep-input"
+                    value="1"
+                    step="0.1"
+                />
 
                 <label for="rainfall-input">rainfall</label>
                 <input
@@ -87,11 +93,17 @@
                     step="0.01"
                 />
 
-                <label hidden   for="g-input">gravity</label>
-                <input hidden   type="number" id="g-input" value="1.0" step="0.1" />
+                <label hidden for="g-input">gravity</label>
+                <input
+                    hidden
+                    type="number"
+                    id="g-input"
+                    value="1.0"
+                    step="0.1"
+                />
 
                 <label for="kc-input">sediment capacity</label>
-                <input type="number" id="kc-input" value="0.5" step="0.1" />
+                <input type="number" id="kc-input" value="0.8" step="0.1" />
 
                 <label for="ks-input">sediment dissolving</label>
                 <input type="number" id="ks-input" value="0.1" step="0.01" />
@@ -108,7 +120,7 @@
                 />
             </fieldset>
 
-            <fieldset>
+            <fieldset hidden>
                 <legend>individual steps</legend>
                 <button id="water-increment-button">water increment</button>
                 <button id="outflow-flux-button">outflow flux</button>
@@ -121,23 +133,34 @@
                 <button id="full-step-button">full step</button>
             </fieldset>
 
-            <fieldset>
+            <fieldset id="scale-fieldset">
                 <legend>scale</legend>
                 <p>note : settings in this category require a reset</p>
-                <label for="resolution-select">resolution</label>
-                <select name="resolution" id="resolution-select">
-                    <option value="256">256</option>
-                    <option value="512">512</option>
-                    <option value="1024">1024</option>
-                </select>
 
-                <br>
+                <div>
+                    <label for="height-scale-input"
+                        >virtual terrain height</label
+                    >
+                    <input
+                        type="number"
+                        id="height-scale-input"
+                        value="200"
+                        step="10"
+                    />
+                    <p>unit is m</p>
+                </div>
 
-                <label for="height-scale-input">virtual terrain height</label>
-                <input type="number" id="height-scale-input" value="100" step="10">
-
-                <label for="width-scale-input">virtual terrain width</label>
-                <input type="number" id="width-scale-input" value="300" step="10">
+                <div>
+                    <label for="resolution-select"
+                        >virtual terrain resolution</label
+                    >
+                    <select name="resolution" id="resolution-select">
+                        <option value="256">256</option>
+                        <option value="512">512</option>
+                        <option value="1024" selected>1024</option>
+                    </select>
+                    <p>1 pixel = 1m²</p>
+                </div>
             </fieldset>
         </aside>
         <aside id="info-panel">
@@ -147,16 +170,6 @@
                 <a href="https://inria.hal.science/inria-00402079/document">
                     on a paper by Xing Mei, Philippe Decaudin and Bao-Gang Hu </a
                 >.
-            </p>
-
-            <p>todo:
-                <ul>
-                    <li>improve terrain scale handling</li>
-                    <li>better simulation stability</li>
-                    <li>support for higher resolution terrain</li>
-                    <li>better visualization</li>
-                    <li>dynamic canvas resizing</li>
-                </ul>
             </p>
         </aside>
         <script type="module" src="/src/main.ts"></script>

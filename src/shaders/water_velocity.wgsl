@@ -13,9 +13,14 @@ var v_write : texture_storage_2d<rg32float, write>;
 @group(1) @binding(0)
 var<uniform> timestep: f32;
 
+@group(1) @binding(7)
+var<uniform> terrain_height_scale: f32;
+
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
     
     let dim = textureDimensions(bds_read);
+    //let l : f32 = terrain_width_scale / f32(dim.x);
+    const l = 1.0;
 
     // STEP 1 : update water based on incoming and outgoing flux
 
@@ -47,7 +52,7 @@ var<uniform> timestep: f32;
     let total_out : f32 = f_out[0] + f_out[1] + f_out[2] + f_out[3];
 
    // FIXME : add the scaling by lx * ly
-    let volume : f32 = timestep *(total_in - total_out);
+    let volume : f32 = (timestep *(total_in - total_out)) / l * l;
 
     let bds = textureLoad(bds_read, id.xy);
     let bds_new = bds + vec4f(0, volume, 0, 0);

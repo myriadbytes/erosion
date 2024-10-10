@@ -31,6 +31,7 @@ const render_pipeline_layout = device.createPipelineLayout({
     bindGroupLayouts: [
         grid_mesh.bind_group_layout,
         compute.view_bind_group_layout,
+        compute.params_bind_group_layout,
     ],
 });
 
@@ -71,7 +72,7 @@ function render() {
                 view: context.getCurrentTexture().createView(),
                 loadOp: "clear",
                 storeOp: "store",
-                clearValue: [0.0, 0.0, 0.1, 1.0],
+                clearValue: [0, 0, 0, 1.0],
             },
         ],
         depthStencilAttachment: {
@@ -87,6 +88,7 @@ function render() {
     pass.setIndexBuffer(grid_mesh.index_buffer, "uint32");
     pass.setBindGroup(0, grid_mesh.bind_group);
     pass.setBindGroup(1, compute.view_bind_group);
+    pass.setBindGroup(2, compute.params_bind_group);
     pass.drawIndexed(grid_mesh.nb_to_draw);
     pass.end();
 

@@ -134,9 +134,11 @@ body {
 }
 
 #info-panel {
+    padding: 1em;
     grid-area: info-panel;
     display: flex;
     flex-direction: column;
+    gap: 1em;
 }
 
 fieldset {

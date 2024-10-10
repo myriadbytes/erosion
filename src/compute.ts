@@ -11,7 +11,7 @@ export class ErosionCompute {
     running: boolean = true;
     // textures
     next_resolution: number;
-    RESOLUTION = 256;
+    RESOLUTION = 1024;
     t1_read: GPUTexture;
     t1_write: GPUTexture;
     t2_read: GPUTexture;
@@ -64,8 +64,9 @@ export class ErosionCompute {
     ks_param_buffer: GPUBuffer;
     kd_param_buffer: GPUBuffer;
     evaporation_param_buffer: GPUBuffer;
-    terrain_height_scale: number = 100;
-    terrain_width_scale: number = 300;
+    terrain_height_param_buffer: GPUBuffer;
+    terrain_width_param_buffer: GPUBuffer;
+    terrain_height: number = 200;
 
     constructor(device: GPUDevice) {
         this.device = device;
@@ -167,7 +168,7 @@ export class ErosionCompute {
                     noise.perlin(
                         (x / this.RESOLUTION) * 6,
                         (y / this.RESOLUTION) * 6
-                    ) * this.terrain_height_scale
+                    ) * this.terrain_height
                 );
             }
             return 0;
@@ -200,6 +201,13 @@ export class ErosionCompute {
                 rowsPerImage: this.RESOLUTION,
             },
             { width: this.RESOLUTION, height: this.RESOLUTION }
+        );
+
+        // update the scale uniforms
+        this.device.queue.writeBuffer(
+            this.terrain_height_param_buffer,
+            0,
+            new Float32Array([this.terrain_height])
         );
     }
 
@@ -274,6 +282,11 @@ export class ErosionCompute {
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: {},
                 },
+                {
+                    binding: 7, // terrain height
+                    visibility: GPUShaderStage.COMPUTE | GPUShaderStage.VERTEX,
+                    buffer: {},
+                },
             ],
         });
 
@@ -315,6 +328,18 @@ export class ErosionCompute {
 
         this.evaporation_param_buffer = this.device.createBuffer({
             label: "evaporation parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.terrain_height_param_buffer = this.device.createBuffer({
+            label: "terrain height parameter buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        this.terrain_width_param_buffer = this.device.createBuffer({
+            label: "terrain width parameter buffer",
             size: 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
@@ -363,6 +388,12 @@ export class ErosionCompute {
                     binding: 6,
                     resource: {
                         buffer: this.evaporation_param_buffer,
+                    },
+                },
+                {
+                    binding: 7,
+                    resource: {
+                        buffer: this.terrain_height_param_buffer,
                     },
                 },
             ],

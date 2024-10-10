@@ -30,26 +30,36 @@ var velocity_texture: texture_2d<f32>;
 @group(1) @binding(3)
 var<uniform> visualization_type: u32;
 
+@group(2) @binding(7)
+var<uniform> terrain_height_scale: f32;
+
+
 @vertex
 fn vertexMain(in: Vertex) -> VertexOut {
     var out: VertexOut;
 
     let dim = textureDimensions(terrain_texture);
-    let height : f32 = textureLoad(terrain_texture, vec2u(in.uv * f32(dim.x - 1)), 0).r * 0.002;
+    
+    // virtual terrain is width*width*height in meterss
+    // while the grid mesh is 1*1 in size
+    // so we scale the height so it's in (0,1) and then apply the height/width ratio
+    let height_scale = (1 / terrain_height_scale) * (terrain_height_scale / f32(dim.x));
+
+    let height : f32 = textureLoad(terrain_texture,  vec2u(in.uv * f32(dim.x - 1)), 0).r * height_scale;
 
     let delta : f32 = 1.0 / f32(dim.x);
 
-    let height_l : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) - vec2u(1, 0), 0).r * 0.002;
-    let height_r : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) + vec2u(1, 0), 0).r * 0.002;
-    let height_t : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) + vec2u(0, 1), 0).r * 0.002;
-    let height_b : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) - vec2u(0, 1), 0).r * 0.002;
+    let height_l : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) - vec2u(1, 0), 0).r * height_scale;
+    let height_r : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) + vec2u(1, 0), 0).r * height_scale;
+    let height_t : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) + vec2u(0, 1), 0).r * height_scale;
+    let height_b : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) - vec2u(0, 1), 0).r * height_scale;
 
     let tangent = vec3f(2 * delta, height_r - height_l, 0.0);
     let bitangent = vec3f(0.0, height_t - height_b, 2 * delta);
 
     out.normal = -normalize(cross(tangent, bitangent));
 
-    out.pos = proj * view * vec4f(in.pos + vec3f(0, clamp(height, -.5, .5), 0), 1.0);
+    out.pos = proj * view * vec4f(in.pos + vec3f(0, height, 0), 1.0);
 
     //out.pos = proj * view * vec4f(in.pos, 1.0);
     out.uv = in.uv;
