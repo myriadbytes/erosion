@@ -158,6 +158,8 @@ export class ErosionCompute {
          *   POPULATE HEIGHT TEXTURE WITH PERLIN NOISE
          */
         const noise = new Perlin();
+        const offset_x = Math.random();
+        const offset_y = Math.random();
         const heightmap = new Float32Array(
             this.RESOLUTION * this.RESOLUTION * 4
         ).map((e, i, a) => {
@@ -166,8 +168,8 @@ export class ErosionCompute {
                 let y = (i / 4) % this.RESOLUTION;
                 return (
                     noise.perlin(
-                        (x / this.RESOLUTION) * 6,
-                        (y / this.RESOLUTION) * 6
+                        (x / this.RESOLUTION + offset_x) * 6,
+                        (y / this.RESOLUTION + offset_y) * 6
                     ) * this.terrain_height
                 );
             }
