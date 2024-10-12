@@ -4,14 +4,24 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>WebGPU Erosion</title>
-      <script type="module" crossorigin src="/erosion/assets/index-CDU5BWCc.js"></script>
-      <link rel="stylesheet" crossorigin href="/erosion/assets/index-CrGeRY9Y.css">
+      <script type="module" crossorigin src="/erosion/assets/index-D3ndG0mu.js"></script>
+      <link rel="stylesheet" crossorigin href="/erosion/assets/index-BJpWf55p.css">
     </head>
     <body>
         <main id="viewport">
             <canvas id="viewport-canvas" width="800" height="600"></canvas>
         </main>
         <aside id="control-panel">
+            <header>
+                <h1>WebGPU Hydraulic Erosion</h1>
+                <p>
+                    Based on a
+                    <a href="https://inria.hal.science/inria-00402079/document"
+                        >paper by by Xing Mei, Philippe Decaudin and Bao-Gang
+                        Hu</a
+                    >.
+                </p>
+            </header>
             <fieldset>
                 <legend>visualization :</legend>
                 <div>
@@ -159,19 +169,11 @@
                         <option value="256">256</option>
                         <option value="512">512</option>
                         <option value="1024" selected>1024</option>
+                        <option value="1024">2048</option>
                     </select>
                     <p>1 pixel = 1m²</p>
                 </div>
             </fieldset>
-        </aside>
-        <aside id="info-panel">
-            <h1>WebGPU Hydraulic Erosion</h1>
-            <p>
-                This simulation is based
-                <a href="https://inria.hal.science/inria-00402079/document">
-                    on a paper by Xing Mei, Philippe Decaudin and Bao-Gang Hu </a
-                >.
-            </p>
         </aside>
     </body>
 </html>
