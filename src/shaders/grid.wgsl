@@ -75,13 +75,13 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
         const terrain_color = vec3f(121./255., 134./255., 69./255.);
         const sediment_color = vec3f(254./255., 250./255., 224./255.);
-        const water_color = vec3f(82./255., 139./255., 255./255.);
+        const water_color = vec3f(39./255., 71./255., 110./255.);
 
         let light_dir = normalize(vec3f(1, 1, 0));
         let lambert = dot(in.normal, light_dir);
         let ambient = vec3f(0.1, 0.1, 0.1);
 
-        let a = mix(terrain_color, sediment_color, smoothstep(0.0, 0.8, sediment));
+        let a = mix(terrain_color, sediment_color, smoothstep(0.0, 1.0, sediment));
         let b = mix(a, water_color, smoothstep(4.0, 5.0, water));
 
         return vec4f(b * lambert + ambient, 1.0);

@@ -11,6 +11,16 @@
             <canvas id="viewport-canvas" width="800" height="600"></canvas>
         </main>
         <aside id="control-panel">
+            <header>
+                <h1>WebGPU Hydraulic Erosion</h1>
+                <p>
+                    Based on a
+                    <a href="https://inria.hal.science/inria-00402079/document"
+                        >paper by by Xing Mei, Philippe Decaudin and Bao-Gang
+                        Hu</a
+                    >.
+                </p>
+            </header>
             <fieldset>
                 <legend>visualization :</legend>
                 <div>
@@ -163,15 +173,6 @@
                     <p>1 pixel = 1m²</p>
                 </div>
             </fieldset>
-        </aside>
-        <aside id="info-panel">
-            <h1>WebGPU Hydraulic Erosion</h1>
-            <p>
-                This simulation is based
-                <a href="https://inria.hal.science/inria-00402079/document">
-                    on a paper by Xing Mei, Philippe Decaudin and Bao-Gang Hu </a
-                >.
-            </p>
         </aside>
         <script type="module" src="/src/main.ts"></script>
     </body>

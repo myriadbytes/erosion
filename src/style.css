@@ -116,11 +116,11 @@ a:visited {
 
 body {
     font-family: "IBM Plex Mono";
-    background-color: black;
+    background-color: #151515;
     color: white;
     display: grid;
-    grid-template-columns: 1fr 3fr 1fr;
-    grid-template-areas: "info-panel viewport control-panel";
+    grid-template-columns: 4fr 1fr;
+    grid-template-areas: "viewport control-panel";
     height: 100vh;
 }
 
@@ -131,18 +131,15 @@ body {
 #control-panel {
     grid-area: control-panel;
     overflow-y: scroll;
-}
-
-#info-panel {
-    padding: 1em;
-    grid-area: info-panel;
     display: flex;
     flex-direction: column;
-    gap: 1em;
+    padding: 0.5em;
 }
 
-fieldset {
-    margin: 0.5em;
+header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
 }
 
 p {
