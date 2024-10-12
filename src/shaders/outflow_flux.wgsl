@@ -17,15 +17,13 @@ var<uniform> g: f32;
 var<uniform> terrain_height_scale: f32;
 
 const a: f32 = 10.0;
+const l = 1.0;
 
 @compute @workgroup_size(16, 16) fn ComputeMain(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let dim = textureDimensions(bds_read);
 
     let bd : vec2f = textureLoad(bds_read, id.xy).rg;
-
-    //let l : f32 = terrain_width_scale / f32(dim.x);
-    const l = 1.0;
 
     // height difference
     var h_l : f32 = 0.0;
@@ -62,7 +60,6 @@ const a: f32 = 10.0;
 
     let f_new = f + vec4f(f_l, f_r, f_t, f_b);
 
-    // FIXME : sort out the values for lx * ly
     let k = min(1, (bd[1] * l * l)/ ((f_new[0] + f_new[1] + f_new[2] + f_new[3]) * timestep)); // scaling factor
 
     textureStore(f_write, id.xy, k * f_new);

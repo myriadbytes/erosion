@@ -85,8 +85,6 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
         let b = mix(a, water_color, smoothstep(4.0, 5.0, water));
 
         return vec4f(b * lambert + ambient, 1.0);
-
-        //return vec4f(mix(terrain_color, sediment_color, clamp(sediment, 0.0, 1.0)) * lambert + ambiant_color, 1.0);
     }
 
     // DEBUG FLUX
@@ -120,6 +118,4 @@ fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
 
     return vec4f(1.0, 0.0, 0.0, 1.0);
 
-
-    //return textureSample(terrain_texture, viz_sampler, in.uv);
 } 

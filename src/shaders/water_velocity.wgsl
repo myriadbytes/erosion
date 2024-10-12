@@ -51,7 +51,6 @@ var<uniform> terrain_height_scale: f32;
     let f_out : vec4f = textureLoad(f_read, id.xy);
     let total_out : f32 = f_out[0] + f_out[1] + f_out[2] + f_out[3];
 
-   // FIXME : add the scaling by lx * ly
     let volume : f32 = (timestep *(total_in - total_out)) / l * l;
 
     let bds = textureLoad(bds_read, id.xy);
