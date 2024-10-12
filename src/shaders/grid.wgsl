@@ -44,9 +44,7 @@ fn vertexMain(in: Vertex) -> VertexOut {
     // while the grid mesh is 1*1 in size
     // so we scale the height so it's in (0,1) and then apply the height/width ratio
     let height_scale = (1 / terrain_height_scale) * (terrain_height_scale / f32(dim.x));
-
     let height : f32 = textureLoad(terrain_texture,  vec2u(in.uv * f32(dim.x - 1)), 0).r * height_scale;
-
     let delta : f32 = 1.0 / f32(dim.x);
 
     let height_l : f32 = textureLoad(terrain_texture, vec2u((in.uv) * f32(dim.x - 1)) - vec2u(1, 0), 0).r * height_scale;
@@ -56,12 +54,9 @@ fn vertexMain(in: Vertex) -> VertexOut {
 
     let tangent = vec3f(2 * delta, height_r - height_l, 0.0);
     let bitangent = vec3f(0.0, height_t - height_b, 2 * delta);
-
     out.normal = -normalize(cross(tangent, bitangent));
 
     out.pos = proj * view * vec4f(in.pos + vec3f(0, height, 0), 1.0);
-
-    //out.pos = proj * view * vec4f(in.pos, 1.0);
     out.uv = in.uv;
 
     return out;
@@ -69,34 +64,29 @@ fn vertexMain(in: Vertex) -> VertexOut {
 
 @fragment
 fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
-    const terrain_color = vec3f(121./255., 134./255., 69./255.);
-    const sediment_color = vec3f(254./255., 250./255., 224./255.);
-  
     let height = textureSample(terrain_texture, viz_sampler, in.uv)[0] / 100;
-
-    const water_color = vec3f(82./255., 139./255., 255./255.);
     let water = textureSample(terrain_texture, viz_sampler, in.uv)[1];
-
     let flow = textureSample(flow_texture, viz_sampler, in.uv);
     let v = textureSample(velocity_texture, viz_sampler, in.uv);
-
     let sediment = textureSample(terrain_texture, viz_sampler, in.uv)[2];
 
-    //return vec4f(v.xy, 0.0, 1.0);
-
-    // DEBUG TERRAIN
+    // TERRAIN
     if(visualization_type == 0){
-        //return vec4f(mix(mix(terrain_diffuse, sediment_color, sediment*30), water_color, water * 5), 1.0);
-        //return vec4f(mix(terrain_diffuse, water_color, water * 10), 1.0);
 
-        //return(vec4f((in.normal + 1) / 2, 1.0));
+        const terrain_color = vec3f(121./255., 134./255., 69./255.);
+        const sediment_color = vec3f(254./255., 250./255., 224./255.);
+        const water_color = vec3f(82./255., 139./255., 255./255.);
 
         let light_dir = normalize(vec3f(1, 1, 0));
         let lambert = dot(in.normal, light_dir);
+        let ambient = vec3f(0.1, 0.1, 0.1);
 
-        let ambiant_color = vec3f(0.1, 0.1, 0.1);
+        let a = mix(terrain_color, sediment_color, smoothstep(0.0, 0.8, sediment));
+        let b = mix(a, water_color, smoothstep(4.0, 5.0, water));
 
-        return vec4f(mix(terrain_color, sediment_color, clamp(sediment, 0.0, 1.0)) * lambert + ambiant_color, 1.0);
+        return vec4f(b * lambert + ambient, 1.0);
+
+        //return vec4f(mix(terrain_color, sediment_color, clamp(sediment, 0.0, 1.0)) * lambert + ambiant_color, 1.0);
     }
 
     // DEBUG FLUX
