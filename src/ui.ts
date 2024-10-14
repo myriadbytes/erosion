@@ -136,7 +136,7 @@ export function setup_controls(compute: ErosionCompute) {
     );
 
     // steps
-    document
+    /* document
         .getElementById("water-increment-button")!
         .addEventListener("mousedown", () => {
             compute.encode_water_increment();
@@ -158,7 +158,7 @@ export function setup_controls(compute: ErosionCompute) {
         .getElementById("erosion-deposition-button")!
         .addEventListener("mousedown", () => {
             compute.encode_erosion_deposition();
-        });
+        }); */
 
     document
         .getElementById("resolution-select")!

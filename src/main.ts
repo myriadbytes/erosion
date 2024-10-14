@@ -65,7 +65,9 @@ const render_pipeline = device.createRenderPipeline({
 
 function render() {
     const encoder = device.createCommandEncoder();
+
     if (compute.running) compute.encode_full_step(encoder);
+
     const pass = encoder.beginRenderPass({
         colorAttachments: [
             {
