@@ -57,7 +57,6 @@ fn vertexMain(in: Vertex) -> VertexOut {
     out.normal = -normalize(cross(tangent, bitangent));
 
     out.pos = proj * view * vec4f(in.pos + vec3f(0, height, 0), 1.0);
-
     out.uv = in.uv;
 
     return out;
