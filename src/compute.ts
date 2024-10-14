@@ -867,8 +867,7 @@ export class ErosionCompute {
         });
     }
 
-    run_water_increment() {
-        const encoder = this.device.createCommandEncoder({});
+    encode_water_increment(encoder: GPUCommandEncoder) {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.water_increment_pipeline);
         pass.setBindGroup(0, this.water_increment_bind_group);
@@ -880,12 +879,9 @@ export class ErosionCompute {
             { texture: this.t1_read },
             { width: this.RESOLUTION, height: this.RESOLUTION }
         );
-        const command_buffer = encoder.finish();
-        this.device.queue.submit([command_buffer]);
     }
 
-    run_outflow_flux() {
-        const encoder = this.device.createCommandEncoder({});
+    encode_outflow_flux(encoder: GPUCommandEncoder) {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.outflow_flux_pipeline);
         pass.setBindGroup(0, this.outflow_flux_bind_group);
@@ -897,12 +893,9 @@ export class ErosionCompute {
             { texture: this.t2_read },
             { width: this.RESOLUTION, height: this.RESOLUTION }
         );
-        const command_buffer = encoder.finish();
-        this.device.queue.submit([command_buffer]);
     }
 
-    run_water_velocity() {
-        const encoder = this.device.createCommandEncoder({});
+    encode_water_velocity(encoder: GPUCommandEncoder) {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.water_velocity_pipeline);
         pass.setBindGroup(0, this.water_velocity_bind_group);
@@ -919,12 +912,9 @@ export class ErosionCompute {
             { texture: this.t3_read },
             { width: this.RESOLUTION, height: this.RESOLUTION }
         );
-        const command_buffer = encoder.finish();
-        this.device.queue.submit([command_buffer]);
     }
 
-    run_erosion_deposition() {
-        const encoder = this.device.createCommandEncoder({});
+    encode_erosion_deposition(encoder: GPUCommandEncoder) {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.erosion_deposition_pipeline);
         pass.setBindGroup(0, this.erosion_deposition_bind_group);
@@ -936,12 +926,9 @@ export class ErosionCompute {
             { texture: this.t1_read },
             { width: this.RESOLUTION, height: this.RESOLUTION }
         );
-        const command_buffer = encoder.finish();
-        this.device.queue.submit([command_buffer]);
     }
 
-    run_transportation() {
-        const encoder = this.device.createCommandEncoder({});
+    encode_transportation(encoder: GPUCommandEncoder) {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.transportation_pipeline);
         pass.setBindGroup(0, this.transportation_bind_group);
@@ -953,12 +940,9 @@ export class ErosionCompute {
             { texture: this.t1_read },
             { width: this.RESOLUTION, height: this.RESOLUTION }
         );
-        const command_buffer = encoder.finish();
-        this.device.queue.submit([command_buffer]);
     }
 
-    run_evaporation() {
-        const encoder = this.device.createCommandEncoder({});
+    encode_evaporation(encoder: GPUCommandEncoder) {
         const pass = encoder.beginComputePass();
         pass.setPipeline(this.evaporation_pipeline);
         pass.setBindGroup(0, this.evaporation_bind_group);
@@ -970,16 +954,14 @@ export class ErosionCompute {
             { texture: this.t1_read },
             { width: this.RESOLUTION, height: this.RESOLUTION }
         );
-        const command_buffer = encoder.finish();
-        this.device.queue.submit([command_buffer]);
     }
 
-    run_full_step() {
-        this.run_water_increment();
-        this.run_outflow_flux();
-        this.run_water_velocity();
-        this.run_erosion_deposition();
-        this.run_transportation();
-        this.run_evaporation();
+    encode_full_step(encoder: GPUCommandEncoder) {
+        this.encode_water_increment(encoder);
+        this.encode_outflow_flux(encoder);
+        this.encode_water_velocity(encoder);
+        this.encode_erosion_deposition(encoder);
+        this.encode_transportation(encoder);
+        this.encode_evaporation(encoder);
     }
 }

@@ -139,25 +139,25 @@ export function setup_controls(compute: ErosionCompute) {
     document
         .getElementById("water-increment-button")!
         .addEventListener("mousedown", () => {
-            compute.run_water_increment();
+            compute.encode_water_increment();
         });
 
     document
         .getElementById("outflow-flux-button")!
         .addEventListener("mousedown", () => {
-            compute.run_outflow_flux();
+            compute.encode_outflow_flux();
         });
 
     document
         .getElementById("water-velocity-button")!
         .addEventListener("mousedown", () => {
-            compute.run_water_velocity();
+            compute.encode_water_velocity();
         });
 
     document
         .getElementById("erosion-deposition-button")!
         .addEventListener("mousedown", () => {
-            compute.run_erosion_deposition();
+            compute.encode_erosion_deposition();
         });
 
     document
