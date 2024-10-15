@@ -64,11 +64,12 @@ fn vertexMain(in: Vertex) -> VertexOut {
 
 @fragment
 fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
-    let height = textureSample(terrain_texture, viz_sampler, in.uv)[0] / 100;
-    let water = textureSample(terrain_texture, viz_sampler, in.uv)[1];
-    let flow = textureSample(flow_texture, viz_sampler, in.uv);
-    let v = textureSample(velocity_texture, viz_sampler, in.uv);
-    let sediment = textureSample(terrain_texture, viz_sampler, in.uv)[2];
+    let dim = textureDimensions(terrain_texture);
+
+    let water = textureLoad(terrain_texture, vec2u(in.uv * f32(dim.x - 1)), 0)[1];
+    let flow = textureLoad(flow_texture, vec2u(in.uv * f32(dim.x - 1)), 0);
+    let v = textureLoad(velocity_texture, vec2u(in.uv * f32(dim.x - 1)), 0);
+    let sediment = textureLoad(terrain_texture, vec2u(in.uv * f32(dim.x - 1)), 0)[2];
 
     // TERRAIN
     if(visualization_type == 0){

@@ -10,7 +10,7 @@ export async function InitWebGPU() {
     }
 
     const device = await adapter.requestDevice({
-        requiredFeatures: ["float32-filterable"],
+        requiredFeatures: [],
     });
     if (!device) {
         throw new Error(

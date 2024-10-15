@@ -226,17 +226,17 @@ export class ErosionCompute {
                 {
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                    texture: {},
+                    texture: { sampleType: "unfilterable-float" },
                 },
                 {
                     binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {},
+                    texture: { sampleType: "unfilterable-float" },
                 },
                 {
                     binding: 2,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {},
+                    texture: { sampleType: "unfilterable-float" },
                 },
                 {
                     binding: 3,
@@ -847,15 +847,19 @@ export class ErosionCompute {
             entries: [
                 {
                     binding: 0,
-                    resource: this.t1_read.createView(),
+                    resource: this.t1_read.createView({
+                        format: "rgba32float",
+                    }),
                 },
                 {
                     binding: 1,
-                    resource: this.t2_read.createView(),
+                    resource: this.t2_read.createView({
+                        format: "rgba32float",
+                    }),
                 },
                 {
                     binding: 2,
-                    resource: this.t3_read.createView(),
+                    resource: this.t3_read.createView({ format: "rg32float" }),
                 },
                 {
                     binding: 3,
