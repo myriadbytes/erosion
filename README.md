@@ -15,4 +15,4 @@ The algorithm used for the simulation is based on [a paper by Xing Mei, Philippe
 ## Bugs
 
 The simulation still needs some tweaking to be more stable in the long run and prevent artifacts on crests.  
-There is also flickering on the water layer, which may be related to simulation code but also seems to be in some capacity dependent on the user's GPU. If anyone has any insight, feel free to reach out !
+There is also flickering on the water layer, which seems to be related to simulation code. If anyone has any insight, feel free to reach out !
