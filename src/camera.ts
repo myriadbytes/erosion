@@ -71,7 +71,7 @@ export class OrbitCamera {
         // proj matrix buffer
         // directly mapped, since it's not going to change (for now)
         let proj_matrix = mat4.create();
-        mat4.perspective(proj_matrix, 120, width / height, 0.01, 100);
+        mat4.perspective(proj_matrix, 0.6, width / height, 0.01, 100);
         this.proj_matrix_buffer = this.device.createBuffer({
             label: "Projection Matrix Buffer",
             size: 16 * 4,

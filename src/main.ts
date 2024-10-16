@@ -27,6 +27,13 @@ const grid_mesh = new GridMesh(
 const compute = new ErosionCompute(device);
 setup_controls(compute);
 
+let orbiting = false;
+document.addEventListener("keydown", (e) => {
+    if (e.key === "k") {
+        orbiting = !orbiting;
+    }
+});
+
 const render_pipeline_layout = device.createPipelineLayout({
     bindGroupLayouts: [
         grid_mesh.bind_group_layout,
@@ -67,6 +74,7 @@ function render() {
     const encoder = device.createCommandEncoder();
 
     if (compute.running) compute.encode_full_step(encoder);
+    if (orbiting) camera.rotate_camera(0.1, 0);
 
     const pass = encoder.beginRenderPass({
         colorAttachments: [
