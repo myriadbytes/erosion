@@ -16,3 +16,4 @@ The algorithm used for the simulation is based on [a paper by Xing Mei, Philippe
 
 The simulation still needs some tweaking to be more stable in the long run and prevent artifacts on crests.  
 There is also flickering on the water layer, which seems to be related to simulation code. If anyone has any insight, feel free to reach out !
+The UI code is atrocious. I should have used a framework of some kind. Rewriting the UI is a high priority task once I have some time to dedicate to this project.
